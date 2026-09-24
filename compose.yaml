@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: roomify
+      POSTGRES_USER: roomify
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roomify -d roomify"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      PORT: 8080
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: roomify
+      DB_USERNAME: roomify
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  test:
+    image: maven:3.9-eclipse-temurin-21
+    profiles: ["test"]
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: roomify
+      DB_USERNAME: roomify
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["mvn", "-B", "-Dtest=RoomProjectRepositoryTest", "test"]
+
+volumes:
+  postgres_data:

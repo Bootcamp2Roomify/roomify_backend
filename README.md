@@ -221,6 +221,66 @@ Team members should not push development work directly into `main` or `develop`.
 Each change should be completed on a separate branch and submitted to `develop` through a Pull Request.
 
 ---
+## Local Development with Docker — ROOM-9
+
+### Requirements
+
+Docker Desktop with Docker Compose running.
+Java and PostgreSQL run inside containers.
+
+### Configuration
+
+Create `.env` in the repository root:
+
+```dotenv
+DB_PASSWORD=replace_with_your_own_local_password
+```
+
+Set your own password. Never commit `.env`.
+
+Compose supplies `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`,
+and `DB_PASSWORD` to Spring Boot. Spring Boot does not automatically
+load the `.env` file itself.
+
+### Start
+
+```bash
+docker compose up --build -d
+curl -i http://localhost:8080/api/health
+```
+
+The backend is available on port 8080. PostgreSQL is accessible
+within the Compose network.
+
+Flyway applies migrations from `src/main/resources/db/migration`.
+Do not edit migrations after they have been applied; add a new
+versioned migration for subsequent schema changes.
+
+### Verify Persistence
+
+```bash
+docker compose --profile test run --rm test
+```
+
+The integration test saves a RoomProject, clears the persistence
+context, retrieves it for its owner, and checks that another owner
+cannot retrieve it through the owner-filtered repository method.
+
+Test records are rolled back. This uses the local development
+database and must not target a production database.
+
+### Logs and Shutdown
+
+```bash
+docker compose logs --tail=100 backend
+docker compose down
+```
+
+Database data persists in the named volume after shutdown.
+`docker compose down -v` deletes that data.
+
+The Dockerfile skips tests during image creation; run the test
+command separately before submitting changes.
 
 ## Commit Convention
 
