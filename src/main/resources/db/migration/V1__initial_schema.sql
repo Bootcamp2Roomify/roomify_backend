@@ -13,21 +13,17 @@ CREATE TABLE users (
 );
 
 CREATE TABLE room_projects (
-    project_id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+    project_id UUID PRIMARY KEY,
+    status VARCHAR(50) NOT NULL DEFAULT 'CREATED',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_room_projects_status
-        CHECK (status IN ('DRAFT', 'ANALYZED', 'REDESIGN_GENERATED', 'COMPLETED'))
+        CHECK (status IN ('CREATED', 'IMAGE_UPLOADED', 'ANALYZED', 'PREFERENCES_READY', 'DESIGN_READY'))
 );
-
-CREATE INDEX idx_room_projects_user_id ON room_projects(user_id);
 
 CREATE TABLE room_images (
     image_id BIGSERIAL PRIMARY KEY,
-    project_id BIGINT NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
     storage_key TEXT NOT NULL,
     original_filename VARCHAR(255) NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
@@ -79,7 +75,7 @@ CREATE TABLE furniture_decisions (
 
 CREATE TABLE room_preferences (
     preference_id BIGSERIAL PRIMARY KEY,
-    project_id BIGINT NOT NULL UNIQUE REFERENCES room_projects(project_id) ON DELETE CASCADE,
+    project_id UUID NOT NULL UNIQUE REFERENCES room_projects(project_id) ON DELETE CASCADE,
     style VARCHAR(50) NOT NULL,
     budget_min NUMERIC(12,2) NOT NULL,
     budget_max NUMERIC(12,2) NOT NULL,
@@ -96,7 +92,7 @@ CREATE TABLE room_preferences (
 
 CREATE TABLE redesign_recommendations (
     redesign_id BIGSERIAL PRIMARY KEY,
-    project_id BIGINT NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
     summary TEXT NOT NULL,
     estimated_total_cost NUMERIC(12,2),
     status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
@@ -201,7 +197,7 @@ CREATE INDEX idx_redesign_items_furniture_id ON redesign_items(furniture_id);
 
 CREATE TABLE generated_designs (
     design_id BIGSERIAL PRIMARY KEY,
-    project_id BIGINT NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
     redesign_id BIGINT NOT NULL REFERENCES redesign_recommendations(redesign_id) ON DELETE CASCADE,
     source_image_id BIGINT NOT NULL REFERENCES room_images(image_id) ON DELETE RESTRICT,
     storage_key TEXT,
@@ -265,7 +261,7 @@ CREATE INDEX idx_furniture_recommendations_alternative_id ON furniture_recommend
 
 CREATE TABLE diy_projects (
     diy_project_id BIGSERIAL PRIMARY KEY,
-    project_id BIGINT NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
     recommendation_id BIGINT REFERENCES furniture_recommendations(recommendation_id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
@@ -301,7 +297,7 @@ CREATE INDEX idx_diy_materials_diy_project_id ON diy_materials(diy_project_id);
 
 CREATE TABLE shopping_lists (
     shopping_list_id BIGSERIAL PRIMARY KEY,
-    project_id BIGINT NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES room_projects(project_id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
