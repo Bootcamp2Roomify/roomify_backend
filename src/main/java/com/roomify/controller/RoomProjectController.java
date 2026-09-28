@@ -1,5 +1,7 @@
 package com.roomify.controller;
 
+import com.roomify.dto.CreateProjectResponse;
+import com.roomify.dto.ProjectSnapshotResponse;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.service.RoomProjectService;
@@ -20,17 +22,27 @@ public class RoomProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<RoomProject> createProject() {
+    public ResponseEntity<CreateProjectResponse> createProject() {
         RoomProject project = service.createProject();
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(project);
+        CreateProjectResponse response = new CreateProjectResponse(
+                project.getId(),
+                project.getStatus()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{id}")
-    public RoomProject getProject(@PathVariable UUID id) {
-        return service.getProject(id);
+    public ProjectSnapshotResponse getProject(@PathVariable UUID id) {
+        RoomProject project = service.getProject(id);
+
+        return new ProjectSnapshotResponse(
+                project.getId(),
+                project.getStatus(),
+                project.getCreatedAt(),
+                project.getUpdatedAt()
+        );
     }
 
     @PatchMapping("/{id}/status")
