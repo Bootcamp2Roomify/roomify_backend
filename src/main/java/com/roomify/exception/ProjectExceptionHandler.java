@@ -40,7 +40,29 @@ public class ProjectExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiError(
                         "INVALID_PROJECT_ID",
-                        "Project ID must be a valid UUID."
+                        "Project id must be a valid UUID."
+                ));
+    }
+
+    @ExceptionHandler(NoActiveImageException.class)
+    public ResponseEntity<ApiError> handleNoActiveImage(
+            NoActiveImageException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiError(
+                        "NO_ACTIVE_IMAGE",
+                        exception.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(VisionServiceException.class)
+    public ResponseEntity<ApiError> handleVisionService(
+            VisionServiceException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiError(
+                        "ANALYSIS_FAILED",
+                        "Analysis could not be completed. Please retry."
                 ));
     }
 

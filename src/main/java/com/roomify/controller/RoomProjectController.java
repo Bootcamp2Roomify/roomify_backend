@@ -2,6 +2,7 @@ package com.roomify.controller;
 
 import com.roomify.dto.CreateProjectResponse;
 import com.roomify.dto.ProjectSnapshotResponse;
+import com.roomify.dto.vision.VisionAnalysisResponse;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.service.RoomProjectService;
@@ -43,6 +44,11 @@ public class RoomProjectController {
                 project.getCreatedAt(),
                 project.getUpdatedAt()
         );
+    }
+
+    @PostMapping("/{id}/analysis")
+    public VisionAnalysisResponse analyzeProject(@PathVariable UUID id) {
+        return service.analyzeProject(id);
     }
 
     @PatchMapping("/{id}/status")
