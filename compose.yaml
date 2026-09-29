@@ -43,7 +43,5 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["mvn", "-B", "-Dtest=RoomProjectRepositoryTest", "test"]
-
-volumes:
+    command: ["mvn", "-B", "test"]
   postgres_data:
