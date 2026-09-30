@@ -132,12 +132,13 @@ class FurnitureDecisionControllerTest {
         Long imageId = jdbc.queryForObject("""
             INSERT INTO room_images (
                 project_id,
+                bucket,
                 storage_key,
                 original_filename,
                 mime_type,
                 file_size_bytes
             )
-            VALUES (?, ?, 'room.jpg', 'image/jpeg', 1000)
+            VALUES (?, 'test-local', ?, 'room.jpg', 'image/jpeg', 1000)
             RETURNING image_id
             """, Long.class, projectId, UUID.randomUUID().toString());
 
