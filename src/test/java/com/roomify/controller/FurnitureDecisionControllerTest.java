@@ -143,8 +143,19 @@ class FurnitureDecisionControllerTest {
             """, Long.class, projectId, UUID.randomUUID().toString());
 
         return jdbc.queryForObject("""
-            INSERT INTO detected_objects (image_id, object_class)
-            VALUES (?, 'chair')
+            INSERT INTO detected_objects (
+                image_id,
+                project_id,
+                object_class,
+                model_version
+            )
+            SELECT
+                image_id,
+                project_id,
+                'chair',
+                'test-model'
+            FROM room_images
+            WHERE image_id = ?
             RETURNING object_id
             """, Long.class, imageId);
     }
