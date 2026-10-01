@@ -7,6 +7,7 @@ import com.roomify.service.FurnitureDecisionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/projects/{projectId}/objects")
@@ -21,7 +22,7 @@ public class FurnitureDecisionController {
     @PatchMapping("/{objectId}")
     public ResponseEntity<FurnitureDecisionResponse> updateDecision(
             @PathVariable Long projectId,
-            @PathVariable Long objectId,
+            @PathVariable UUID objectId,
             @Valid @RequestBody UpdateFurnitureDecisionRequest request) {
 
         FurnitureDecision saved = service.setDecision(
@@ -32,7 +33,7 @@ public class FurnitureDecisionController {
 
         return ResponseEntity.ok(
             new FurnitureDecisionResponse(
-                saved.getDetectedObject().getId(),
+                saved.getDetectedObject().getObjectUuid(),
                 saved.getDecision()
             )
         );
