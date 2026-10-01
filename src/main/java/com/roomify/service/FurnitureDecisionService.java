@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.UUID;
 
 @Service
 public class FurnitureDecisionService {
@@ -25,9 +26,9 @@ public class FurnitureDecisionService {
 
     @Transactional
     public FurnitureDecision setDecision(
-            Long projectId,
-            Long objectId,
-            FurnitureDecisionType decisionType) {
+        UUID projectId,
+        Long objectId,
+        FurnitureDecisionType decisionType) {
 
         DetectedObject detectedObject = detectedObjectRepository
             .findByIdAndProjectId(objectId, projectId)

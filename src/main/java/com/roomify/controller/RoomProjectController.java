@@ -2,7 +2,7 @@ package com.roomify.controller;
 
 import com.roomify.dto.CreateProjectResponse;
 import com.roomify.dto.ProjectSnapshotResponse;
-import com.roomify.dto.vision.VisionAnalysisResponse;
+import com.roomify.dto.analysis.AnalyzeProjectResponse;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.service.RoomProjectService;
@@ -46,8 +46,8 @@ public class RoomProjectController {
         );
     }
 
-    @PostMapping("/{id}/analysis")
-    public VisionAnalysisResponse analyzeProject(@PathVariable UUID id) {
+   @PostMapping("/{id}/analysis")
+    public AnalyzeProjectResponse analyzeProject(@PathVariable UUID id) {
         return service.analyzeProject(id);
     }
 

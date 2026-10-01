@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/projects/{projectId}/objects")
 public class FurnitureDecisionController {
@@ -20,21 +22,21 @@ public class FurnitureDecisionController {
 
     @PatchMapping("/{objectId}")
     public ResponseEntity<FurnitureDecisionResponse> updateDecision(
-            @PathVariable Long projectId,
+            @PathVariable UUID projectId,
             @PathVariable Long objectId,
-            @Valid @RequestBody UpdateFurnitureDecisionRequest request) {
-
+            @Valid @RequestBody UpdateFurnitureDecisionRequest request
+    ) {
         FurnitureDecision saved = service.setDecision(
-            projectId,
-            objectId,
-            request.decision()
+                projectId,
+                objectId,
+                request.decision()
         );
 
         return ResponseEntity.ok(
-            new FurnitureDecisionResponse(
-                saved.getDetectedObject().getId(),
-                saved.getDecision()
-            )
+                new FurnitureDecisionResponse(
+                        saved.getDetectedObject().getId(),
+                        saved.getDecision()
+                )
         );
     }
 }
