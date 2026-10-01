@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.UUID;
 
 @Service
 public class FurnitureDecisionService {
@@ -26,24 +27,24 @@ public class FurnitureDecisionService {
     @Transactional
     public FurnitureDecision setDecision(
             Long projectId,
-            Long objectId,
+            UUID objectId,
             FurnitureDecisionType decisionType) {
 
         DetectedObject detectedObject = detectedObjectRepository
-            .findByIdAndProjectId(objectId, projectId)
+            .findByObjectUuidAndProjectId(objectId, projectId)
             .orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND,
                 "Detected object was not found in this project."
             ));
 
         FurnitureDecision decision = decisionRepository
-            .findByDetectedObject_Id(objectId)
+            .findByDetectedObject_Id(detectedObject.getId())
             .orElseGet(() ->
                 new FurnitureDecision(detectedObject, decisionType)
             );
 
         decision.updateDecision(decisionType);
 
-       return decisionRepository.saveAndFlush(decision);
+        return decisionRepository.saveAndFlush(decision);
     }
 }

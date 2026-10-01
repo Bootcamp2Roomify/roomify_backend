@@ -1,9 +1,10 @@
 package com.roomify.dto;
 
 import com.roomify.entity.FurnitureDecisionType;
+import java.util.UUID;
 
 public record FurnitureDecisionResponse(
-    Long objectId,
+    UUID objectId,
     FurnitureDecisionType decision
 ) {
 }

@@ -29,7 +29,7 @@ class FurnitureDecisionControllerTest {
     @Test
     void createsAndUpdatesFurnitureDecision() throws Exception {
         Long projectId = createProject();
-        Long objectId = createDetectedObject(projectId);
+        UUID objectId = createDetectedObject(projectId);
 
         mockMvc.perform(patch(
                 "/api/projects/{projectId}/objects/{objectId}",
@@ -41,7 +41,7 @@ class FurnitureDecisionControllerTest {
                 {"decision":"KEEP"}
                 """))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.objectId").value(objectId))
+            .andExpect(jsonPath("$.objectId").value(objectId.toString()))
             .andExpect(jsonPath("$.decision").value("KEEP"));
 
         mockMvc.perform(patch(
@@ -56,14 +56,22 @@ class FurnitureDecisionControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.decision").value("REPLACE"));
 
-        Integer count = jdbc.queryForObject(
-            "SELECT COUNT(*) FROM furniture_decisions WHERE object_id = ?",
+        Integer count = jdbc.queryForObject("""
+            SELECT COUNT(*)
+            FROM furniture_decisions fd
+            JOIN detected_objects d ON d.object_id = fd.object_id
+            WHERE d.object_uuid = ?
+            """,
             Integer.class,
             objectId
         );
 
-        String decision = jdbc.queryForObject(
-            "SELECT decision FROM furniture_decisions WHERE object_id = ?",
+        String decision = jdbc.queryForObject("""
+            SELECT fd.decision
+            FROM furniture_decisions fd
+            JOIN detected_objects d ON d.object_id = fd.object_id
+            WHERE d.object_uuid = ?
+            """,
             String.class,
             objectId
         );
@@ -76,7 +84,7 @@ class FurnitureDecisionControllerTest {
     void returns404WhenObjectBelongsToAnotherProject() throws Exception {
         Long correctProjectId = createProject();
         Long wrongProjectId = createProject();
-        Long objectId = createDetectedObject(correctProjectId);
+        UUID objectId = createDetectedObject(correctProjectId);
 
         mockMvc.perform(patch(
                 "/api/projects/{projectId}/objects/{objectId}",
@@ -93,7 +101,7 @@ class FurnitureDecisionControllerTest {
     @Test
     void returns400ForInvalidDecision() throws Exception {
         Long projectId = createProject();
-        Long objectId = createDetectedObject(projectId);
+        UUID objectId = createDetectedObject(projectId);
 
         mockMvc.perform(patch(
                 "/api/projects/{projectId}/objects/{objectId}",
@@ -128,7 +136,7 @@ class FurnitureDecisionControllerTest {
             """, Long.class, userId);
     }
 
-    private Long createDetectedObject(Long projectId) {
+    private UUID createDetectedObject(Long projectId) {
         Long imageId = jdbc.queryForObject("""
             INSERT INTO room_images (
                 project_id,
@@ -156,7 +164,7 @@ class FurnitureDecisionControllerTest {
                 'test-model'
             FROM room_images
             WHERE image_id = ?
-            RETURNING object_id
-            """, Long.class, imageId);
+            RETURNING object_uuid
+            """, UUID.class, imageId);
     }
 }
