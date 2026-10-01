@@ -17,7 +17,8 @@ erDiagram
     }
     ROOM_IMAGE {
         int image_id PK
-        int project_id FK
+        int project_id FK,UK
+        string bucket
         string storage_key
         string original_filename
         string mime_type
@@ -28,6 +29,8 @@ erDiagram
     }
     DETECTED_OBJECT {
         int object_id PK
+        uuid object_uuid UK
+        int project_id FK
         int image_id FK
         string object_class
         decimal confidence
@@ -35,6 +38,8 @@ erDiagram
         decimal y_min
         decimal x_max
         decimal y_max
+        string model_version
+        boolean active
         string source
         datetime created_at
         datetime updated_at
@@ -211,7 +216,8 @@ erDiagram
         datetime created_at
     }
     USER ||--o{ ROOM_PROJECT : "owns"
-    ROOM_PROJECT ||--o{ ROOM_IMAGE : "contains"
+    ROOM_PROJECT ||--o| ROOM_IMAGE : "has primary image"
+    ROOM_PROJECT ||--o{ DETECTED_OBJECT : "has detections"
     ROOM_IMAGE ||--o{ DETECTED_OBJECT : "has"
     DETECTED_OBJECT ||--o| FURNITURE_DECISION : "has decision"
     ROOM_PROJECT ||--o| ROOM_PREFERENCE : "has"

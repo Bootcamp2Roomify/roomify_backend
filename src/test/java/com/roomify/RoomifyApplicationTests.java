@@ -1,4 +1,4 @@
-package main.test.java.com.roomify;
+package com.roomify;
 
 public class RoomifyApplicationTests {
     
