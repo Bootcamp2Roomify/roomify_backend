@@ -10,4 +10,6 @@ public interface StorageService {
     );
 
     void delete(String objectKey);
+
+    byte[] download(String objectKey);
 }
