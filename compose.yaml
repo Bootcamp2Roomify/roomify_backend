@@ -44,4 +44,5 @@ services:
       db:
         condition: service_healthy
     command: ["mvn", "-B", "test"]
+volumes:
   postgres_data:
