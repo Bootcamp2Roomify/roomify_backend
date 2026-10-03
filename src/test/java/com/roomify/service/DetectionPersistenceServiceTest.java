@@ -32,7 +32,7 @@ class DetectionPersistenceServiceTest {
 
     @Test
     void reanalysisSupersedesPreviousActiveDetections() {
-        Long projectId = createProject();
+        UUID projectId = createProject();
         Long imageId = createRoomImage(projectId);
 
         createExistingDetection(projectId, imageId, "bed");
@@ -86,7 +86,7 @@ class DetectionPersistenceServiceTest {
 
     @Test
     void eachPersistedDetectionGetsUniqueStableUuid() {
-        Long projectId = createProject();
+        UUID projectId = createProject();
         createRoomImage(projectId);
 
         List<DetectedObject> saved =
@@ -114,33 +114,20 @@ class DetectionPersistenceServiceTest {
             .isNotEqualTo(saved.get(1).getObjectUuid());
     }
 
-    private Long createProject() {
-        Long userId = jdbc.queryForObject("""
-            INSERT INTO users (
-                email,
-                password_hash
-            )
-            VALUES (?, 'test-password')
-            RETURNING user_id
-            """,
-            Long.class,
-            UUID.randomUUID() + "@example.com"
-        );
-
+    private UUID createProject() {
         return jdbc.queryForObject("""
             INSERT INTO room_projects (
-                user_id,
-                name
+                project_id
             )
-            VALUES (?, 'Detection test room')
+            VALUES (?)
             RETURNING project_id
             """,
-            Long.class,
-            userId
+            UUID.class,
+            UUID.randomUUID()
         );
     }
 
-    private Long createRoomImage(Long projectId) {
+    private Long createRoomImage(UUID projectId) {
         return jdbc.queryForObject("""
             INSERT INTO room_images (
                 project_id,
@@ -167,7 +154,7 @@ class DetectionPersistenceServiceTest {
     }
 
     private void createExistingDetection(
-        Long projectId,
+        UUID projectId,
         Long imageId,
         String label
     ) {
@@ -205,22 +192,13 @@ class DetectionPersistenceServiceTest {
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void rollsBackEntireReanalysisWhenPersistenceFails() {
-        Long projectId = createProject();
+        UUID projectId = createProject();
         Long imageId = createRoomImage(projectId);
 
         createExistingDetection(
             projectId,
             imageId,
             "bed"
-        );
-
-        Long userId = jdbc.queryForObject("""
-            SELECT user_id
-            FROM room_projects
-            WHERE project_id = ?
-            """,
-            Long.class,
-            projectId
         );
 
         try {
@@ -278,11 +256,6 @@ class DetectionPersistenceServiceTest {
             jdbc.update(
                 "DELETE FROM room_projects WHERE project_id = ?",
                 projectId
-            );
-
-            jdbc.update(
-                "DELETE FROM users WHERE user_id = ?",
-                userId
             );
         }
     }

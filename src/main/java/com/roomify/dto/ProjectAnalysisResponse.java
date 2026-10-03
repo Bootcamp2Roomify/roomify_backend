@@ -1,9 +1,10 @@
 package com.roomify.dto;
 
 import java.util.List;
+import java.util.UUID;
 
 public record ProjectAnalysisResponse(
-    Long projectId,
+    UUID projectId,
     List<DetectedObjectResponse> objects
 ) {
 }

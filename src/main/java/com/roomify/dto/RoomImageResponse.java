@@ -2,9 +2,11 @@ package com.roomify.dto;
 
 import com.roomify.entity.RoomImage;
 
+import java.util.UUID;
+
 public record RoomImageResponse(
     Long imageId,
-    Long projectId,
+    UUID projectId,
     String bucket,
     String storageKey,
     String originalFilename,

@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/projects/{projectId}/image")
 public class RoomImageController {
@@ -20,7 +22,7 @@ public class RoomImageController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<RoomImageResponse> upload(
-        @PathVariable Long projectId,
+        @PathVariable UUID projectId,
         @RequestParam("file") MultipartFile file
     ) {
         RoomImage image = roomImageService.upload(projectId, file);
