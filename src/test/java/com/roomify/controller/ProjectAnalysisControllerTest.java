@@ -26,7 +26,7 @@ class ProjectAnalysisControllerTest {
 
     @Test
     void returnsStoredActiveDetectionsWithStableUuid() throws Exception {
-        Long projectId = createProject();
+        UUID projectId = createProject();
         Long imageId = createRoomImage(projectId);
 
         UUID activeObjectUuid = createDetectedObject(
@@ -48,7 +48,7 @@ class ProjectAnalysisControllerTest {
                 projectId
             ))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.projectId").value(projectId))
+            .andExpect(jsonPath("$.projectId").value(projectId.toString()))
             .andExpect(jsonPath("$.objects.length()").value(1))
             .andExpect(jsonPath("$.objects[0].objectId")
                 .value(activeObjectUuid.toString()))
@@ -65,7 +65,7 @@ class ProjectAnalysisControllerTest {
 
     @Test
     void returnsSameStableUuidAcrossMultipleReads() throws Exception {
-        Long projectId = createProject();
+        UUID projectId = createProject();
         Long imageId = createRoomImage(projectId);
 
         UUID objectUuid = createDetectedObject(
@@ -92,33 +92,20 @@ class ProjectAnalysisControllerTest {
                 .value(objectUuid.toString()));
     }
 
-    private Long createProject() {
-        Long userId = jdbc.queryForObject("""
-            INSERT INTO users (
-                email,
-                password_hash
-            )
-            VALUES (?, 'test-password')
-            RETURNING user_id
-            """,
-            Long.class,
-            UUID.randomUUID() + "@example.com"
-        );
-
+    private UUID createProject() {
         return jdbc.queryForObject("""
             INSERT INTO room_projects (
-                user_id,
-                name
+                project_id
             )
-            VALUES (?, 'Analysis test room')
+            VALUES (?)
             RETURNING project_id
             """,
-            Long.class,
-            userId
+            UUID.class,
+            UUID.randomUUID()
         );
     }
 
-    private Long createRoomImage(Long projectId) {
+    private Long createRoomImage(UUID projectId) {
         return jdbc.queryForObject("""
             INSERT INTO room_images (
                 project_id,
@@ -145,7 +132,7 @@ class ProjectAnalysisControllerTest {
     }
 
     private UUID createDetectedObject(
-        Long projectId,
+        UUID projectId,
         Long imageId,
         String label,
         boolean active

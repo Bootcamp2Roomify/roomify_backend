@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.InputStream;
@@ -55,5 +56,15 @@ public class S3StorageAdapter implements StorageService {
             .build();
 
         s3Client.deleteObject(request);
+    }
+
+    @Override
+    public byte[] download(String objectKey) {
+        GetObjectRequest request = GetObjectRequest.builder()
+            .bucket(bucket)
+            .key(objectKey)
+            .build();
+
+        return s3Client.getObjectAsBytes(request).asByteArray();
     }
 }

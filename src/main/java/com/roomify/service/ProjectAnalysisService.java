@@ -6,6 +6,8 @@ import com.roomify.repository.DetectedObjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 public class ProjectAnalysisService {
 
@@ -18,7 +20,7 @@ public class ProjectAnalysisService {
     }
 
     @Transactional(readOnly = true)
-    public ProjectAnalysisResponse getStoredAnalysis(Long projectId) {
+    public ProjectAnalysisResponse getStoredAnalysis(UUID projectId) {
         var objects = detectedObjectRepository
             .findByProjectIdAndActiveTrueOrderByIdAsc(projectId)
             .stream()

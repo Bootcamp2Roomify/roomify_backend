@@ -5,6 +5,8 @@ import com.roomify.service.ProjectAnalysisService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/projects/{projectId}/analysis")
 public class ProjectAnalysisController {
@@ -19,7 +21,7 @@ public class ProjectAnalysisController {
 
     @GetMapping
     public ResponseEntity<ProjectAnalysisResponse> getAnalysis(
-        @PathVariable Long projectId
+        @PathVariable UUID projectId
     ) {
         return ResponseEntity.ok(
             projectAnalysisService.getStoredAnalysis(projectId)

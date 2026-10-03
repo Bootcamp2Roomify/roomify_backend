@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class DetectionPersistenceService {
@@ -29,7 +30,7 @@ public class DetectionPersistenceService {
 
     @Transactional
     public List<DetectedObject> replaceActiveDetections(
-        Long projectId,
+        UUID projectId,
         String modelVersion,
         List<DetectionInput> detections
     ) {
@@ -104,7 +105,7 @@ public class DetectionPersistenceService {
 
     @Transactional
     public List<DetectedObject> replaceActiveDetections(
-        Long projectId,
+        UUID projectId,
         AnalysisInput analysis
     ) {
         if (analysis == null) {

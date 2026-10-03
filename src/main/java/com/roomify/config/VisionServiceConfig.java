@@ -15,6 +15,8 @@ public class VisionServiceConfig {
     @Bean
     public RestClient visionRestClient(VisionServiceProperties properties) {
         HttpClient httpClient = HttpClient.newBuilder()
+                // Uvicorn rejects the h2c upgrade the JDK client sends by default.
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(properties.getConnectTimeout())
                 .build();
 

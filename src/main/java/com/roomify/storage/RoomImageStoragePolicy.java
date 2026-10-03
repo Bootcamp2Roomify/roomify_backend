@@ -42,8 +42,8 @@ public class RoomImageStoragePolicy {
         }
     }
 
-    public String generateObjectKey(Long projectId, String contentType) {
-        if (projectId == null || projectId <= 0) {
+    public String generateObjectKey(UUID projectId, String contentType) {
+        if (projectId == null) {
             throw new IllegalArgumentException("Invalid project ID.");
         }
 
@@ -55,7 +55,7 @@ public class RoomImageStoragePolicy {
             );
         };
 
-        return "rooms/%d/original/%s.%s".formatted(
+        return "rooms/%s/original/%s.%s".formatted(
             projectId,
             UUID.randomUUID(),
             extension

@@ -1,6 +1,8 @@
 package com.roomify.service;
 
 import com.roomify.entity.RoomImage;
+import com.roomify.entity.RoomProject;
+import com.roomify.entity.RoomProjectStatus;
 import com.roomify.repository.RoomImageRepository;
 import com.roomify.repository.RoomProjectRepository;
 import com.roomify.storage.RoomImageStoragePolicy;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Service
 public class RoomImageService {
@@ -31,10 +34,9 @@ public class RoomImageService {
         this.storagePolicy = storagePolicy;
     }
 
-    public RoomImage upload(Long projectId, MultipartFile file) {
-        if (!roomProjectRepository.existsById(projectId)) {
-            throw new IllegalArgumentException("Room project not found.");
-        }
+    public RoomImage upload(UUID projectId, MultipartFile file) {
+        RoomProject project = roomProjectRepository.findById(projectId)
+            .orElseThrow(() -> new IllegalArgumentException("Room project not found."));
 
         String contentType = file.getContentType();
         long size = file.getSize();
@@ -73,7 +75,9 @@ public class RoomImageService {
             );
 
             try {
-                return roomImageRepository.saveAndFlush(roomImage);
+                RoomImage saved = roomImageRepository.saveAndFlush(roomImage);
+                markImageUploaded(project);
+                return saved;
             } catch (RuntimeException e) {
                 storageService.delete(storedObject.key());
                 throw e;
@@ -92,11 +96,24 @@ public class RoomImageService {
 
         try {
             RoomImage saved = roomImageRepository.saveAndFlush(existing);
+            markImageUploaded(project);
             storageService.delete(oldKey);
             return saved;
         } catch (RuntimeException e) {
             storageService.delete(storedObject.key());
             throw e;
+        }
+    }
+
+    // A new image makes the project ready for (re-)analysis.
+    private void markImageUploaded(RoomProject project) {
+        RoomProjectStatus status = project.getStatus();
+
+        if (status == RoomProjectStatus.CREATED
+            || status == RoomProjectStatus.ANALYZED
+            || status == RoomProjectStatus.ANALYSIS_FAILED) {
+            project.setStatus(RoomProjectStatus.IMAGE_UPLOADED);
+            roomProjectRepository.save(project);
         }
     }
 }

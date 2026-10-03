@@ -10,7 +10,7 @@ public class VisionServiceProperties {
     private String baseUrl;
     private Duration connectTimeout = Duration.ofSeconds(2);
     private Duration readTimeout = Duration.ofSeconds(10);
-    private String analysisPath = "/api/v1/analysis";
+    private String analysisPath = "/v1/analyze";
 
     public String getBaseUrl() {
         return baseUrl;

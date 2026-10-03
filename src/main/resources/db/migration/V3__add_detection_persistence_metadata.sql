@@ -15,7 +15,7 @@ ALTER TABLE detected_objects
 ADD CONSTRAINT uq_detected_objects_object_uuid UNIQUE (object_uuid);
 
 ALTER TABLE detected_objects
-ADD COLUMN project_id BIGINT;
+ADD COLUMN project_id UUID;
 
 UPDATE detected_objects d
 SET project_id = ri.project_id

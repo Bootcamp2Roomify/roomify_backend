@@ -41,6 +41,9 @@ class RoomProjectServiceTest {
     @Mock
     private VisionServiceClient visionServiceClient;
 
+    @Mock
+    private DetectionPersistenceService detectionPersistenceService;
+
     @InjectMocks
     private RoomProjectService service;
 
@@ -102,7 +105,7 @@ class RoomProjectServiceTest {
                 .thenReturn(Optional.of(project));
         when(imageRepository.findTopByProjectIdOrderByCreatedAtDesc(projectId))
                 .thenReturn(Optional.of(image));
-        when(detectedObjectRepository.findByImageIdOrderByIdAsc(image.getId()))
+        when(detectedObjectRepository.findByProjectIdAndActiveTrueOrderByIdAsc(projectId))
                 .thenReturn(List.of());
 
         AnalyzeProjectResponse response = service.analyzeProject(projectId);

@@ -61,4 +61,19 @@ public class LocalStorageAdapter implements StorageService {
             throw new IllegalStateException("Failed to delete stored file.", e);
         }
     }
+
+    @Override
+    public byte[] download(String objectKey) {
+        Path target = root.resolve(objectKey).normalize();
+
+        if (!target.startsWith(root)) {
+            throw new IllegalArgumentException("Invalid storage key.");
+        }
+
+        try {
+            return Files.readAllBytes(target);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read stored file.", e);
+        }
+    }
 }

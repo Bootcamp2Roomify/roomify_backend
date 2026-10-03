@@ -4,8 +4,6 @@ import com.roomify.client.VisionServiceClient;
 import com.roomify.dto.analysis.AnalyzeProjectResponse;
 import com.roomify.dto.analysis.BoundingBoxResponse;
 import com.roomify.dto.analysis.DetectedObjectResponse;
-import com.roomify.dto.vision.VisionBoundingBox;
-import com.roomify.dto.vision.VisionDetection;
 import com.roomify.entity.DetectedObject;
 import com.roomify.entity.FurnitureDecisionType;
 import com.roomify.entity.RoomImage;
@@ -20,8 +18,6 @@ import com.roomify.repository.RoomProjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -33,17 +29,20 @@ public class RoomProjectService {
     private final RoomImageRepository roomImageRepository;
     private final DetectedObjectRepository detectedObjectRepository;
     private final VisionServiceClient visionServiceClient;
+    private final DetectionPersistenceService detectionPersistenceService;
 
     public RoomProjectService(
             RoomProjectRepository repository,
             RoomImageRepository roomImageRepository,
             DetectedObjectRepository detectedObjectRepository,
-            VisionServiceClient visionServiceClient
+            VisionServiceClient visionServiceClient,
+            DetectionPersistenceService detectionPersistenceService
     ) {
         this.repository = repository;
         this.roomImageRepository = roomImageRepository;
         this.detectedObjectRepository = detectedObjectRepository;
         this.visionServiceClient = visionServiceClient;
+        this.detectionPersistenceService = detectionPersistenceService;
     }
 
     @Transactional
@@ -98,8 +97,8 @@ public class RoomProjectService {
         // A repeat request returns the already saved result.
         if (project.getStatus() == RoomProjectStatus.ANALYZED) {
             List<DetectedObject> existingObjects =
-                    detectedObjectRepository.findByImageIdOrderByIdAsc(
-                            activeImage.getId()
+                    detectedObjectRepository.findByProjectIdAndActiveTrueOrderByIdAsc(
+                            id
                     );
 
             return toAnalyzeProjectResponse(project, existingObjects);
@@ -108,15 +107,10 @@ public class RoomProjectService {
         validateAnalysisStatus(project);
 
         try {
-            var visionResponse = visionServiceClient.analyze(activeImage);
-
-            List<DetectedObject> detectedObjects = toDetectedObjects(
-                    activeImage,
-                    visionResponse.detections()
-            );
+            var analysis = visionServiceClient.analyze(activeImage);
 
             List<DetectedObject> savedObjects =
-                    detectedObjectRepository.saveAll(detectedObjects);
+                    detectionPersistenceService.replaceActiveDetections(id, analysis);
 
             project.setStatus(RoomProjectStatus.ANALYZED);
             repository.save(project);
@@ -170,57 +164,5 @@ public class RoomProjectService {
                 ),
                 FurnitureDecisionType.UNSURE
         );
-    }
-
-    private List<DetectedObject> toDetectedObjects(
-            RoomImage image,
-            List<VisionDetection> detections
-    ) {
-        if (detections == null) {
-            return List.of();
-        }
-
-        return detections.stream()
-                .map(detection -> toDetectedObject(image, detection))
-                .toList();
-    }
-
-    private DetectedObject toDetectedObject(
-            RoomImage image,
-            VisionDetection detection
-    ) {
-        VisionBoundingBox boundingBox = detection.boundingBox();
-
-        Integer xMin = boundingBox == null ? null : boundingBox.x();
-        Integer yMin = boundingBox == null ? null : boundingBox.y();
-        Integer xMax = boundingBox == null
-                ? null
-                : boundingBox.x() + boundingBox.width();
-        Integer yMax = boundingBox == null
-                ? null
-                : boundingBox.y() + boundingBox.height();
-
-        return new DetectedObject(
-                image.getProjectId(),
-                image.getId(),
-                detection.label(),
-                detection.confidence(),
-                normalizeCoordinate(xMin, image.getWidth()),
-                normalizeCoordinate(yMin, image.getHeight()),
-                normalizeCoordinate(xMax, image.getWidth()),
-                normalizeCoordinate(yMax, image.getHeight()),
-                "vision-service"
-        );
-    }
-
-    private BigDecimal normalizeCoordinate(Integer value, Integer dimension) {
-        if (value == null || dimension == null || dimension <= 0) {
-            return null;
-        }
-
-        BigDecimal normalized = BigDecimal.valueOf(value)
-                .divide(BigDecimal.valueOf(dimension), 6, RoundingMode.HALF_UP);
-
-        return normalized.max(BigDecimal.ZERO).min(BigDecimal.ONE);
     }
 }
