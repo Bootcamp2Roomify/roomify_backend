@@ -8,5 +8,7 @@ import java.util.UUID;
 
 public interface RoomImageRepository extends JpaRepository<RoomImage, Long> {
 
+    Optional<RoomImage> findByProjectId(UUID projectId);
+
     Optional<RoomImage> findTopByProjectIdOrderByCreatedAtDesc(UUID projectId);
 }

@@ -71,3 +71,5 @@ desktop.ini
 # Java virtual machine crash logs
 hs_err_pid*
 replay_pid*
+
+/storage/
