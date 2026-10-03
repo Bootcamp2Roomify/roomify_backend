@@ -1,6 +1,12 @@
 package com.roomify.controller;
 
+import com.roomify.dto.analysis.AnalyzeProjectResponse;
+import com.roomify.dto.analysis.BoundingBoxResponse;
+import com.roomify.dto.analysis.DetectedObjectResponse;
+import com.roomify.entity.FurnitureDecisionType;
 import com.roomify.entity.RoomProject;
+import com.roomify.entity.RoomProjectStatus;
+import com.roomify.exception.NoActiveImageException;
 import com.roomify.exception.ProjectExceptionHandler;
 import com.roomify.service.RoomProjectService;
 import org.junit.jupiter.api.Test;
@@ -9,6 +15,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -60,7 +68,8 @@ class RoomProjectControllerTest {
 
         given(service.getProject(unknownId))
                 .willThrow(new NoSuchElementException(
-                        "Room project not found: " + unknownId));
+                        "Room project not found: " + unknownId
+                ));
 
         mockMvc.perform(get("/api/projects/{id}", unknownId))
                 .andExpect(status().isNotFound())
@@ -74,5 +83,61 @@ class RoomProjectControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_PROJECT_ID"))
                 .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    void analyzeProject_whenSuccessful_returnsSavedObjects() throws Exception {
+        UUID projectId = UUID.randomUUID();
+
+        DetectedObjectResponse detectedObject = new DetectedObjectResponse(
+                42L,
+                "chair",
+                new BigDecimal("0.91"),
+                new BoundingBoxResponse(
+                        new BigDecimal("0.12"),
+                        new BigDecimal("0.08"),
+                        new BigDecimal("0.36"),
+                        new BigDecimal("0.44")
+                ),
+                FurnitureDecisionType.UNSURE
+        );
+
+        AnalyzeProjectResponse response = new AnalyzeProjectResponse(
+                projectId,
+                RoomProjectStatus.ANALYZED,
+                List.of(detectedObject)
+        );
+
+        given(service.analyzeProject(projectId)).willReturn(response);
+
+        mockMvc.perform(post("/api/projects/{id}/analysis", projectId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectId").value(projectId.toString()))
+                .andExpect(jsonPath("$.status").value("ANALYZED"))
+                .andExpect(jsonPath("$.objects[0].id").value(42))
+                .andExpect(jsonPath("$.objects[0].label").value("chair"))
+                .andExpect(jsonPath("$.objects[0].confidence").value(0.91))
+                .andExpect(jsonPath("$.objects[0].bbox.xMin").value(0.12))
+                .andExpect(jsonPath("$.objects[0].bbox.yMin").value(0.08))
+                .andExpect(jsonPath("$.objects[0].bbox.xMax").value(0.36))
+                .andExpect(jsonPath("$.objects[0].bbox.yMax").value(0.44))
+                .andExpect(jsonPath("$.objects[0].decision").value("UNSURE"));
+    }
+
+    @Test
+    void analyzeProject_withoutImage_returns409AndClearMessage()
+            throws Exception {
+        UUID projectId = UUID.randomUUID();
+
+        given(service.analyzeProject(projectId))
+                .willThrow(new NoActiveImageException(
+                        "Project has no room image to analyze."
+                ));
+
+        mockMvc.perform(post("/api/projects/{id}/analysis", projectId))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("NO_ACTIVE_IMAGE"))
+                .andExpect(jsonPath("$.message")
+                        .value("Project has no room image to analyze."));
     }
 }

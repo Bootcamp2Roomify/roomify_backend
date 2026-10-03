@@ -30,7 +30,7 @@ public class DetectedObject {
     @Column(name = "image_id", nullable = false)
     private Long imageId;
 
-    @Column(name = "object_class", nullable = false, length = 100)
+    @Column(name = "object_class", nullable = false)
     private String objectClass;
 
     @Column(name = "confidence", precision = 6, scale = 5)

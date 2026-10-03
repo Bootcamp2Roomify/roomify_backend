@@ -2,13 +2,19 @@ package com.roomify.controller;
 
 import com.roomify.dto.CreateProjectResponse;
 import com.roomify.dto.ProjectSnapshotResponse;
-import com.roomify.dto.vision.VisionAnalysisResponse;
+import com.roomify.dto.analysis.AnalyzeProjectResponse;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.service.RoomProjectService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
@@ -47,7 +53,7 @@ public class RoomProjectController {
     }
 
     @PostMapping("/{id}/analysis")
-    public VisionAnalysisResponse analyzeProject(@PathVariable UUID id) {
+    public AnalyzeProjectResponse analyzeProject(@PathVariable UUID id) {
         return service.analyzeProject(id);
     }
 

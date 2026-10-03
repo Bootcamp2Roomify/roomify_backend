@@ -15,6 +15,8 @@ public interface DetectedObjectRepository
 
     void deleteByImageId(Long imageId);
 
+    List<DetectedObject> findByImageIdOrderByIdAsc(Long imageId);
+
     Optional<DetectedObject> findByIdAndProjectId(
             Long objectId,
             UUID projectId

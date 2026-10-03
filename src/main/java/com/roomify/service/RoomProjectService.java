@@ -1,10 +1,13 @@
 package com.roomify.service;
 
 import com.roomify.client.VisionServiceClient;
-import com.roomify.dto.vision.VisionAnalysisResponse;
+import com.roomify.dto.analysis.AnalyzeProjectResponse;
+import com.roomify.dto.analysis.BoundingBoxResponse;
+import com.roomify.dto.analysis.DetectedObjectResponse;
 import com.roomify.dto.vision.VisionBoundingBox;
 import com.roomify.dto.vision.VisionDetection;
 import com.roomify.entity.DetectedObject;
+import com.roomify.entity.FurnitureDecisionType;
 import com.roomify.entity.RoomImage;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
@@ -52,7 +55,8 @@ public class RoomProjectService {
     public RoomProject getProject(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException(
-                        "Room project not found: " + id));
+                        "Room project not found: " + id
+                ));
     }
 
     @Transactional
@@ -73,7 +77,8 @@ public class RoomProjectService {
         if (!allowed) {
             throw new InvalidStateException(
                     "Cannot change project from " + currentStatus
-                            + " to " + nextStatus);
+                            + " to " + nextStatus
+            );
         }
 
         project.setStatus(nextStatus);
@@ -81,9 +86,8 @@ public class RoomProjectService {
     }
 
     @Transactional(noRollbackFor = VisionServiceException.class)
-    public VisionAnalysisResponse analyzeProject(UUID id) {
+    public AnalyzeProjectResponse analyzeProject(UUID id) {
         RoomProject project = getProject(id);
-        validateAnalysisStatus(project);
 
         RoomImage activeImage = roomImageRepository
                 .findTopByProjectIdOrderByCreatedAtDesc(id)
@@ -91,29 +95,38 @@ public class RoomProjectService {
                         "Project has no room image to analyze."
                 ));
 
-        VisionAnalysisResponse response;
+        // A repeat request returns the already saved result.
+        if (project.getStatus() == RoomProjectStatus.ANALYZED) {
+            List<DetectedObject> existingObjects =
+                    detectedObjectRepository.findByImageIdOrderByIdAsc(
+                            activeImage.getId()
+                    );
+
+            return toAnalyzeProjectResponse(project, existingObjects);
+        }
+
+        validateAnalysisStatus(project);
 
         try {
-            response = visionServiceClient.analyze(activeImage);
+            var visionResponse = visionServiceClient.analyze(activeImage);
+
+            List<DetectedObject> detectedObjects = toDetectedObjects(
+                    activeImage,
+                    visionResponse.detections()
+            );
+
+            List<DetectedObject> savedObjects =
+                    detectedObjectRepository.saveAll(detectedObjects);
+
+            project.setStatus(RoomProjectStatus.ANALYZED);
+            repository.save(project);
+
+            return toAnalyzeProjectResponse(project, savedObjects);
         } catch (VisionServiceException exception) {
             project.setStatus(RoomProjectStatus.ANALYSIS_FAILED);
             repository.save(project);
             throw exception;
         }
-
-        detectedObjectRepository.deleteByImageId(activeImage.getId());
-
-        List<DetectedObject> detectedObjects = toDetectedObjects(
-                activeImage,
-                response.detections()
-        );
-
-        detectedObjectRepository.saveAll(detectedObjects);
-
-        project.setStatus(RoomProjectStatus.ANALYZED);
-        repository.save(project);
-
-        return response;
     }
 
     private void validateAnalysisStatus(RoomProject project) {
@@ -125,6 +138,38 @@ public class RoomProjectService {
                     "Project must have an uploaded image before analysis."
             );
         }
+    }
+
+    private AnalyzeProjectResponse toAnalyzeProjectResponse(
+            RoomProject project,
+            List<DetectedObject> detectedObjects
+    ) {
+        List<DetectedObjectResponse> objects = detectedObjects.stream()
+                .map(this::toDetectedObjectResponse)
+                .toList();
+
+        return new AnalyzeProjectResponse(
+                project.getId(),
+                project.getStatus(),
+                objects
+        );
+    }
+
+    private DetectedObjectResponse toDetectedObjectResponse(
+            DetectedObject detectedObject
+    ) {
+        return new DetectedObjectResponse(
+                detectedObject.getId(),
+                detectedObject.getObjectClass(),
+                detectedObject.getConfidence(),
+                new BoundingBoxResponse(
+                        detectedObject.getXMin(),
+                        detectedObject.getYMin(),
+                        detectedObject.getXMax(),
+                        detectedObject.getYMax()
+                ),
+                FurnitureDecisionType.UNSURE
+        );
     }
 
     private List<DetectedObject> toDetectedObjects(
@@ -156,13 +201,15 @@ public class RoomProjectService {
                 : boundingBox.y() + boundingBox.height();
 
         return new DetectedObject(
+                image.getProjectId(),
                 image.getId(),
                 detection.label(),
                 detection.confidence(),
                 normalizeCoordinate(xMin, image.getWidth()),
                 normalizeCoordinate(yMin, image.getHeight()),
                 normalizeCoordinate(xMax, image.getWidth()),
-                normalizeCoordinate(yMax, image.getHeight())
+                normalizeCoordinate(yMax, image.getHeight()),
+                "vision-service"
         );
     }
 

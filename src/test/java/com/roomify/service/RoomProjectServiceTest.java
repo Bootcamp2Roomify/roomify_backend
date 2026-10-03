@@ -1,6 +1,7 @@
 package com.roomify.service;
 
 import com.roomify.client.VisionServiceClient;
+import com.roomify.dto.analysis.AnalyzeProjectResponse;
 import com.roomify.entity.RoomImage;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
@@ -14,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,12 +53,11 @@ class RoomProjectServiceTest {
 
         RoomImage image = new RoomImage(
                 projectId,
+                "test-local",
                 "room-images/example.jpg",
                 "example.jpg",
                 "image/jpeg",
-                2000L,
-                1000,
-                800
+                2000L
         );
 
         VisionServiceException visionError = new VisionServiceException(
@@ -76,6 +77,41 @@ class RoomProjectServiceTest {
                 .isEqualTo(RoomProjectStatus.ANALYSIS_FAILED);
 
         verify(projectRepository).save(project);
+        verify(detectedObjectRepository, never()).deleteByImageId(any());
+        verify(detectedObjectRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void analyzeProject_whenAlreadyAnalyzed_returnsExistingResultsWithoutCallingVision() {
+        UUID projectId = UUID.randomUUID();
+
+        RoomProject project = new RoomProject();
+        project.setStatus(RoomProjectStatus.IMAGE_UPLOADED);
+        project.setStatus(RoomProjectStatus.ANALYZED);
+
+        RoomImage image = new RoomImage(
+                projectId,
+                "test-local",
+                "room-images/example.jpg",
+                "example.jpg",
+                "image/jpeg",
+                2000L
+        );
+
+        when(projectRepository.findById(projectId))
+                .thenReturn(Optional.of(project));
+        when(imageRepository.findTopByProjectIdOrderByCreatedAtDesc(projectId))
+                .thenReturn(Optional.of(image));
+        when(detectedObjectRepository.findByImageIdOrderByIdAsc(image.getId()))
+                .thenReturn(List.of());
+
+        AnalyzeProjectResponse response = service.analyzeProject(projectId);
+
+        assertThat(response.projectId()).isEqualTo(project.getId());
+        assertThat(response.status()).isEqualTo(RoomProjectStatus.ANALYZED);
+        assertThat(response.objects()).isEmpty();
+
+        verify(visionServiceClient, never()).analyze(any());
         verify(detectedObjectRepository, never()).deleteByImageId(any());
         verify(detectedObjectRepository, never()).saveAll(any());
     }
