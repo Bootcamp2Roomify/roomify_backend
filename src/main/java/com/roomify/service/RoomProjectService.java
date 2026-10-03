@@ -55,7 +55,8 @@ public class RoomProjectService {
     public RoomProject getProject(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException(
-                        "Room project not found: " + id));
+                        "Room project not found: " + id
+                ));
     }
 
     @Transactional
@@ -76,7 +77,8 @@ public class RoomProjectService {
         if (!allowed) {
             throw new InvalidStateException(
                     "Cannot change project from " + currentStatus
-                            + " to " + nextStatus);
+                            + " to " + nextStatus
+            );
         }
 
         project.setStatus(nextStatus);
@@ -93,7 +95,7 @@ public class RoomProjectService {
                         "Project has no room image to analyze."
                 ));
 
-        // Repeat calls return existing data; vision-service is not called again.
+        // A repeat request returns the already saved result.
         if (project.getStatus() == RoomProjectStatus.ANALYZED) {
             List<DetectedObject> existingObjects =
                     detectedObjectRepository.findByImageIdOrderByIdAsc(
@@ -106,9 +108,11 @@ public class RoomProjectService {
         validateAnalysisStatus(project);
 
         try {
+            var visionResponse = visionServiceClient.analyze(activeImage);
+
             List<DetectedObject> detectedObjects = toDetectedObjects(
                     activeImage,
-                    visionServiceClient.analyze(activeImage).detections()
+                    visionResponse.detections()
             );
 
             List<DetectedObject> savedObjects =
@@ -197,13 +201,15 @@ public class RoomProjectService {
                 : boundingBox.y() + boundingBox.height();
 
         return new DetectedObject(
+                image.getProjectId(),
                 image.getId(),
                 detection.label(),
                 detection.confidence(),
                 normalizeCoordinate(xMin, image.getWidth()),
                 normalizeCoordinate(yMin, image.getHeight()),
                 normalizeCoordinate(xMax, image.getWidth()),
-                normalizeCoordinate(yMax, image.getHeight())
+                normalizeCoordinate(yMax, image.getHeight()),
+                "vision-service"
         );
     }
 

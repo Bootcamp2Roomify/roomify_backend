@@ -53,12 +53,11 @@ class RoomProjectServiceTest {
 
         RoomImage image = new RoomImage(
                 projectId,
+                "test-local",
                 "room-images/example.jpg",
                 "example.jpg",
                 "image/jpeg",
-                2000L,
-                1000,
-                800
+                2000L
         );
 
         VisionServiceException visionError = new VisionServiceException(
@@ -92,12 +91,11 @@ class RoomProjectServiceTest {
 
         RoomImage image = new RoomImage(
                 projectId,
+                "test-local",
                 "room-images/example.jpg",
                 "example.jpg",
                 "image/jpeg",
-                2000L,
-                1000,
-                800
+                2000L
         );
 
         when(projectRepository.findById(projectId))

@@ -7,6 +7,7 @@ import com.roomify.entity.FurnitureDecisionType;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.exception.NoActiveImageException;
+import com.roomify.exception.ProjectExceptionHandler;
 import com.roomify.service.RoomProjectService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +68,8 @@ class RoomProjectControllerTest {
 
         given(service.getProject(unknownId))
                 .willThrow(new NoSuchElementException(
-                        "Room project not found: " + unknownId));
+                        "Room project not found: " + unknownId
+                ));
 
         mockMvc.perform(get("/api/projects/{id}", unknownId))
                 .andExpect(status().isNotFound())
@@ -110,8 +112,7 @@ class RoomProjectControllerTest {
 
         mockMvc.perform(post("/api/projects/{id}/analysis", projectId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.projectId")
-                        .value(projectId.toString()))
+                .andExpect(jsonPath("$.projectId").value(projectId.toString()))
                 .andExpect(jsonPath("$.status").value("ANALYZED"))
                 .andExpect(jsonPath("$.objects[0].id").value(42))
                 .andExpect(jsonPath("$.objects[0].label").value("chair"))

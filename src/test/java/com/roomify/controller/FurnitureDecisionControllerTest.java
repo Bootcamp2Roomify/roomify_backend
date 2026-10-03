@@ -13,7 +13,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -29,7 +30,7 @@ class FurnitureDecisionControllerTest {
     @Test
     void createsAndUpdatesFurnitureDecision() throws Exception {
         UUID projectId = createProject();
-        Long objectId = createDetectedObject(projectId);
+        UUID objectId = createDetectedObject(projectId);
 
         mockMvc.perform(patch(
                         "/api/projects/{projectId}/objects/{objectId}",
@@ -41,7 +42,7 @@ class FurnitureDecisionControllerTest {
                         {"decision":"KEEP"}
                         """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.objectId").value(objectId))
+                .andExpect(jsonPath("$.objectId").value(objectId.toString()))
                 .andExpect(jsonPath("$.decision").value("KEEP"));
 
         mockMvc.perform(patch(
@@ -56,17 +57,19 @@ class FurnitureDecisionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.decision").value("REPLACE"));
 
-        Integer count = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM furniture_decisions WHERE object_id = ?",
-                Integer.class,
-                objectId
-        );
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM furniture_decisions fd
+                JOIN detected_objects d ON d.object_id = fd.object_id
+                WHERE d.object_uuid = ?
+                """, Integer.class, objectId);
 
-        String decision = jdbc.queryForObject(
-                "SELECT decision FROM furniture_decisions WHERE object_id = ?",
-                String.class,
-                objectId
-        );
+        String decision = jdbc.queryForObject("""
+                SELECT fd.decision
+                FROM furniture_decisions fd
+                JOIN detected_objects d ON d.object_id = fd.object_id
+                WHERE d.object_uuid = ?
+                """, String.class, objectId);
 
         assertThat(count).isEqualTo(1);
         assertThat(decision).isEqualTo("REPLACE");
@@ -76,7 +79,7 @@ class FurnitureDecisionControllerTest {
     void returns404WhenObjectBelongsToAnotherProject() throws Exception {
         UUID correctProjectId = createProject();
         UUID wrongProjectId = createProject();
-        Long objectId = createDetectedObject(correctProjectId);
+        UUID objectId = createDetectedObject(correctProjectId);
 
         mockMvc.perform(patch(
                         "/api/projects/{projectId}/objects/{objectId}",
@@ -93,7 +96,7 @@ class FurnitureDecisionControllerTest {
     @Test
     void returns400ForInvalidDecision() throws Exception {
         UUID projectId = createProject();
-        Long objectId = createDetectedObject(projectId);
+        UUID objectId = createDetectedObject(projectId);
 
         mockMvc.perform(patch(
                         "/api/projects/{projectId}/objects/{objectId}",
@@ -124,29 +127,45 @@ class FurnitureDecisionControllerTest {
                     created_at,
                     updated_at
                 )
-                VALUES (?, 'CREATED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES (?, 'IMAGE_UPLOADED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """, projectId);
 
         return projectId;
     }
 
-    private Long createDetectedObject(UUID projectId) {
+    private UUID createDetectedObject(UUID projectId) {
         Long imageId = jdbc.queryForObject("""
                 INSERT INTO room_images (
                     project_id,
+                    bucket,
                     storage_key,
                     original_filename,
                     mime_type,
-                    file_size_bytes
+                    file_size_bytes,
+                    created_at
                 )
-                VALUES (?, ?, 'room.jpg', 'image/jpeg', 1000)
+                VALUES (?, 'test-local', ?, 'room.jpg', 'image/jpeg', 1000, CURRENT_TIMESTAMP)
                 RETURNING image_id
                 """, Long.class, projectId, UUID.randomUUID().toString());
 
-        return jdbc.queryForObject("""
-                INSERT INTO detected_objects (image_id, object_class)
-                VALUES (?, 'chair')
-                RETURNING object_id
-                """, Long.class, imageId);
+        UUID objectUuid = UUID.randomUUID();
+
+        jdbc.update("""
+                INSERT INTO detected_objects (
+                    object_uuid,
+                    project_id,
+                    image_id,
+                    object_class,
+                    model_version,
+                    active,
+                    source,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, ?, 'chair', 'test-model', true, 'CV',
+                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, objectUuid, projectId, imageId);
+
+        return objectUuid;
     }
 }
