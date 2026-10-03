@@ -13,28 +13,30 @@ import java.util.UUID;
 public interface DetectedObjectRepository
         extends JpaRepository<DetectedObject, Long> {
 
+    void deleteByImageId(Long imageId);
+
     Optional<DetectedObject> findByIdAndProjectId(
-        Long objectId,
-        Long projectId
+            Long objectId,
+            UUID projectId
     );
 
     Optional<DetectedObject> findByObjectUuidAndProjectId(
-        UUID objectUuid,
-        Long projectId
+            UUID objectUuid,
+            UUID projectId
     );
 
     List<DetectedObject> findByProjectIdAndActiveTrueOrderByIdAsc(
-        Long projectId
+            UUID projectId
     );
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
-        UPDATE DetectedObject detectedObject
-        SET detectedObject.active = false
-        WHERE detectedObject.projectId = :projectId
-          AND detectedObject.active = true
-        """)
+            UPDATE DetectedObject detectedObject
+            SET detectedObject.active = false
+            WHERE detectedObject.projectId = :projectId
+              AND detectedObject.active = true
+            """)
     int deactivateActiveByProjectId(
-        @Param("projectId") Long projectId
+            @Param("projectId") UUID projectId
     );
 }

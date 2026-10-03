@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
 import java.util.UUID;
 
 @Service
@@ -19,29 +20,30 @@ public class FurnitureDecisionService {
 
     public FurnitureDecisionService(
             DetectedObjectRepository detectedObjectRepository,
-            FurnitureDecisionRepository decisionRepository) {
+            FurnitureDecisionRepository decisionRepository
+    ) {
         this.detectedObjectRepository = detectedObjectRepository;
         this.decisionRepository = decisionRepository;
     }
 
     @Transactional
     public FurnitureDecision setDecision(
-            Long projectId,
+            UUID projectId,
             UUID objectId,
-            FurnitureDecisionType decisionType) {
-
+            FurnitureDecisionType decisionType
+    ) {
         DetectedObject detectedObject = detectedObjectRepository
-            .findByObjectUuidAndProjectId(objectId, projectId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Detected object was not found in this project."
-            ));
+                .findByObjectUuidAndProjectId(objectId, projectId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Detected object was not found in this project."
+                ));
 
         FurnitureDecision decision = decisionRepository
-            .findByDetectedObject_Id(detectedObject.getId())
-            .orElseGet(() ->
-                new FurnitureDecision(detectedObject, decisionType)
-            );
+                .findByDetectedObject_Id(detectedObject.getId())
+                .orElseGet(() ->
+                        new FurnitureDecision(detectedObject, decisionType)
+                );
 
         decision.updateDecision(decisionType);
 

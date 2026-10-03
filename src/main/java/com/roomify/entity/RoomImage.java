@@ -1,6 +1,14 @@
 package com.roomify.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "room_images")
@@ -12,7 +20,7 @@ public class RoomImage {
     private Long id;
 
     @Column(name = "project_id", nullable = false)
-    private Long projectId;
+    private UUID projectId;
 
     @Column(nullable = false, length = 255)
     private String bucket;
@@ -27,7 +35,7 @@ public class RoomImage {
     private String mimeType;
 
     @Column(name = "file_size_bytes", nullable = false)
-    private Long fileSizeBytes;
+    private long fileSizeBytes;
 
     @Column
     private Integer width;
@@ -35,16 +43,19 @@ public class RoomImage {
     @Column
     private Integer height;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
     protected RoomImage() {
     }
 
     public RoomImage(
-            Long projectId,
+            UUID projectId,
             String bucket,
             String storageKey,
             String originalFilename,
             String mimeType,
-            Long fileSizeBytes
+            long fileSizeBytes
     ) {
         this.projectId = projectId;
         this.bucket = bucket;
@@ -52,13 +63,17 @@ public class RoomImage {
         this.originalFilename = originalFilename;
         this.mimeType = mimeType;
         this.fileSizeBytes = fileSizeBytes;
+        this.width = null;
+        this.height = null;
+        this.createdAt = Instant.now();
     }
+
     public void replace(
-        String bucket,
-        String storageKey,
-        String originalFilename,
-        String mimeType,
-        Long fileSizeBytes
+            String bucket,
+            String storageKey,
+            String originalFilename,
+            String mimeType,
+            long fileSizeBytes
     ) {
         this.bucket = bucket;
         this.storageKey = storageKey;
@@ -73,7 +88,7 @@ public class RoomImage {
         return id;
     }
 
-    public Long getProjectId() {
+    public UUID getProjectId() {
         return projectId;
     }
 
@@ -93,7 +108,7 @@ public class RoomImage {
         return mimeType;
     }
 
-    public Long getFileSizeBytes() {
+    public long getFileSizeBytes() {
         return fileSizeBytes;
     }
 
@@ -103,5 +118,9 @@ public class RoomImage {
 
     public Integer getHeight() {
         return height;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 }

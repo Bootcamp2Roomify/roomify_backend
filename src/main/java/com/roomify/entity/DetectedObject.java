@@ -1,8 +1,15 @@
 package com.roomify.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -18,7 +25,7 @@ public class DetectedObject {
     private UUID objectUuid;
 
     @Column(name = "project_id", nullable = false)
-    private Long projectId;
+    private UUID projectId;
 
     @Column(name = "image_id", nullable = false)
     private Long imageId;
@@ -50,19 +57,25 @@ public class DetectedObject {
     @Column(name = "source", nullable = false, length = 20)
     private String source = "CV";
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     protected DetectedObject() {
     }
 
     public DetectedObject(
-        Long projectId,
-        Long imageId,
-        String objectClass,
-        BigDecimal confidence,
-        BigDecimal xMin,
-        BigDecimal yMin,
-        BigDecimal xMax,
-        BigDecimal yMax,
-        String modelVersion
+            UUID projectId,
+            Long imageId,
+            String objectClass,
+            BigDecimal confidence,
+            BigDecimal xMin,
+            BigDecimal yMin,
+            BigDecimal xMax,
+            BigDecimal yMax,
+            String modelVersion
     ) {
         this.objectUuid = UUID.randomUUID();
         this.projectId = projectId;
@@ -76,6 +89,8 @@ public class DetectedObject {
         this.modelVersion = modelVersion;
         this.active = true;
         this.source = "CV";
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
     }
 
     @PrePersist
@@ -83,10 +98,19 @@ public class DetectedObject {
         if (objectUuid == null) {
             objectUuid = UUID.randomUUID();
         }
+
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+
+        if (updatedAt == null) {
+            updatedAt = createdAt;
+        }
     }
 
     public void deactivate() {
         this.active = false;
+        this.updatedAt = Instant.now();
     }
 
     public Long getId() {
@@ -97,7 +121,7 @@ public class DetectedObject {
         return objectUuid;
     }
 
-    public Long getProjectId() {
+    public UUID getProjectId() {
         return projectId;
     }
 
