@@ -3,6 +3,7 @@ package com.roomify.service;
 import com.roomify.entity.RoomImage;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
+import com.roomify.exception.NoActiveImageException;
 import com.roomify.repository.RoomImageRepository;
 import com.roomify.repository.RoomProjectRepository;
 import com.roomify.storage.RoomImageStoragePolicy;
@@ -11,7 +12,11 @@ import com.roomify.storage.StoredObject;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -49,18 +54,26 @@ public class RoomImageService {
             originalFilename = "room-image";
         }
 
-        StoredObject storedObject;
+        byte[] bytes;
 
         try {
-            storedObject = storageService.upload(
-                objectKey,
-                contentType,
-                size,
-                file.getInputStream()
-            );
+            bytes = file.getBytes();
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read uploaded image.", e);
         }
+
+        BufferedImage decoded = decode(bytes);
+
+        if (decoded == null) {
+            throw new IllegalArgumentException("Image file could not be read.");
+        }
+
+        StoredObject storedObject = storageService.upload(
+            objectKey,
+            contentType,
+            size,
+            new ByteArrayInputStream(bytes)
+        );
 
         RoomImage existing = roomImageRepository.findByProjectId(projectId).orElse(null);
 
@@ -73,6 +86,7 @@ public class RoomImageService {
                 contentType,
                 size
             );
+            roomImage.setDimensions(decoded.getWidth(), decoded.getHeight());
 
             try {
                 RoomImage saved = roomImageRepository.saveAndFlush(roomImage);
@@ -93,6 +107,7 @@ public class RoomImageService {
             contentType,
             size
         );
+        existing.setDimensions(decoded.getWidth(), decoded.getHeight());
 
         try {
             RoomImage saved = roomImageRepository.saveAndFlush(existing);
@@ -102,6 +117,41 @@ public class RoomImageService {
         } catch (RuntimeException e) {
             storageService.delete(storedObject.key());
             throw e;
+        }
+    }
+
+    public RoomImage getActiveImage(UUID projectId) {
+        if (!roomProjectRepository.existsById(projectId)) {
+            throw new NoSuchElementException("Room project not found: " + projectId);
+        }
+
+        RoomImage image = roomImageRepository.findByProjectId(projectId)
+            .orElseThrow(() -> new NoActiveImageException(
+                "Project has no room image."
+            ));
+
+        // Images uploaded before dimensions were recorded.
+        if (image.getWidth() == null || image.getHeight() == null) {
+            BufferedImage decoded = decode(storageService.download(image.getStorageKey()));
+
+            if (decoded != null) {
+                image.setDimensions(decoded.getWidth(), decoded.getHeight());
+                image = roomImageRepository.save(image);
+            }
+        }
+
+        return image;
+    }
+
+    public byte[] getActiveImageContent(RoomImage image) {
+        return storageService.download(image.getStorageKey());
+    }
+
+    private BufferedImage decode(byte[] bytes) {
+        try {
+            return ImageIO.read(new ByteArrayInputStream(bytes));
+        } catch (IOException e) {
+            return null;
         }
     }
 

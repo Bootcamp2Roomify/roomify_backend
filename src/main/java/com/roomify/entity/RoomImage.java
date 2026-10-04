@@ -84,6 +84,11 @@ public class RoomImage {
         this.height = null;
     }
 
+    public void setDimensions(Integer width, Integer height) {
+        this.width = width;
+        this.height = height;
+    }
+
     public Long getId() {
         return id;
     }
