@@ -9,6 +9,7 @@ import com.roomify.entity.RoomProjectStatus;
 import com.roomify.exception.NoActiveImageException;
 import com.roomify.exception.ProjectExceptionHandler;
 import com.roomify.service.RoomProjectService;
+import com.roomify.service.ProjectPreferencesService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -34,6 +35,9 @@ class RoomProjectControllerTest {
 
     @MockitoBean
     private RoomProjectService service;
+
+    @MockitoBean
+    private ProjectPreferencesService preferences;
 
     @Test
     void createProject_returns201AndNewProjectData() throws Exception {

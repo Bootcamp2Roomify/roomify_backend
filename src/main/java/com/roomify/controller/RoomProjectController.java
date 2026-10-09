@@ -6,6 +6,7 @@ import com.roomify.dto.analysis.AnalyzeProjectResponse;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.service.RoomProjectService;
+import com.roomify.service.ProjectPreferencesService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,9 +24,11 @@ import java.util.UUID;
 public class RoomProjectController {
 
     private final RoomProjectService service;
+    private final ProjectPreferencesService preferences;
 
-    public RoomProjectController(RoomProjectService service) {
+    public RoomProjectController(RoomProjectService service, ProjectPreferencesService preferences) {
         this.service = service;
+        this.preferences = preferences;
     }
 
     @PostMapping
@@ -48,7 +51,8 @@ public class RoomProjectController {
                 project.getId(),
                 project.getStatus(),
                 project.getCreatedAt(),
-                project.getUpdatedAt()
+                project.getUpdatedAt(),
+                preferences.find(id)
         );
     }
 
