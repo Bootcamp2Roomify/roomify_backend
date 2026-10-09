@@ -8,6 +8,7 @@ public record ProjectSnapshotResponse(
         UUID id,
         RoomProjectStatus status,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        ProjectPreferencesResponse preferences
 ) {
 }

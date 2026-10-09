@@ -26,6 +26,7 @@ services:
       DB_NAME: roomify
       DB_USERNAME: roomify
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      PREFERENCES_MAX_BUDGET_AMOUNT: ${PREFERENCES_MAX_BUDGET_AMOUNT:-1000000}
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       STORAGE_LOCAL_ROOT: ${STORAGE_LOCAL_ROOT:-./storage}
       STORAGE_LOCAL_BUCKET: ${STORAGE_LOCAL_BUCKET:-local}
@@ -54,6 +55,7 @@ services:
       DB_NAME: roomify
       DB_USERNAME: roomify
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      PREFERENCES_MAX_BUDGET_AMOUNT: ${PREFERENCES_MAX_BUDGET_AMOUNT:-1000000}
     depends_on:
       db:
         condition: service_healthy
