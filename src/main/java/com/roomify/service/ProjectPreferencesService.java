@@ -69,7 +69,13 @@ public class ProjectPreferencesService {
             writeColors(request.preferredColors() == null ? List.of() : request.preferredColors()),
             request.roomPurpose(), Boolean.TRUE.equals(request.rentalFriendly()),
             request.specialRequirements() == null ? "" : request.specialRequirements().strip());
-        return find(projectId);
+
+            jdbc.update("""
+                UPDATE room_projects
+                SET status = 'PREFERENCES_READY', updated_at = CURRENT_TIMESTAMP
+                WHERE project_id = ? AND status = 'ANALYZED'
+                """, projectId);
+            return find(projectId);
     }
 
     private void requireProject(UUID projectId) {
