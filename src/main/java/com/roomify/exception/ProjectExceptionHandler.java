@@ -1,5 +1,7 @@
 package com.roomify.exception;
 
+import com.roomify.ai.AiProviderConfigurationException;
+import com.roomify.ai.AiProviderRetryableException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -68,6 +70,28 @@ public class ProjectExceptionHandler {
                 .body(new ApiError(
                         "ANALYSIS_FAILED",
                         "Analysis could not be completed. Please retry."
+                ));
+    }
+
+    @ExceptionHandler(AiProviderConfigurationException.class)
+    public ResponseEntity<ApiError> handleAiProviderConfiguration(
+            AiProviderConfigurationException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiError(
+                        "AI_PROVIDER_CONFIGURATION_ERROR",
+                        exception.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(AiProviderRetryableException.class)
+    public ResponseEntity<ApiError> handleAiProviderUnavailable(
+            AiProviderRetryableException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiError(
+                        "AI_PROVIDER_UNAVAILABLE",
+                        "Design generation is temporarily unavailable. Please retry."
                 ));
     }
 

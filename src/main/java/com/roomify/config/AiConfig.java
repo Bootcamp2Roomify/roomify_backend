@@ -9,11 +9,11 @@ import org.springframework.web.client.RestClient;
 import java.net.http.HttpClient;
 
 @Configuration
-@EnableConfigurationProperties(OllamaProperties.class)
-public class OllamaConfig {
+@EnableConfigurationProperties(AiProperties.class)
+public class AiConfig {
 
     @Bean
-    public RestClient ollamaRestClient(OllamaProperties properties) {
+    public RestClient aiRestClient(AiProperties properties) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(properties.getConnectTimeout())
                 .build();
