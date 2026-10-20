@@ -2,8 +2,7 @@ package com.roomify.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.roomify.client.OllamaClient;
-import com.roomify.config.OllamaProperties;
+import com.roomify.ai.AiDesignProvider;
 import com.roomify.dto.ProjectPreferencesResponse;
 import com.roomify.dto.design.BudgetAllocation;
 import com.roomify.dto.design.DesignPlan;
@@ -34,8 +33,7 @@ public class DesignService {
     private final ProjectPreferencesService preferencesService;
     private final DesignPromptFactory promptFactory;
     private final DesignPlanValidator planValidator;
-    private final OllamaClient ollamaClient;
-    private final OllamaProperties ollamaProperties;
+    private final AiDesignProvider aiDesignProvider;
     private final ObjectMapper objectMapper;
 
     public DesignService(
@@ -45,8 +43,7 @@ public class DesignService {
             ProjectPreferencesService preferencesService,
             DesignPromptFactory promptFactory,
             DesignPlanValidator planValidator,
-            OllamaClient ollamaClient,
-            OllamaProperties ollamaProperties,
+            AiDesignProvider aiDesignProvider,
             ObjectMapper objectMapper
     ) {
         this.roomProjectRepository = roomProjectRepository;
@@ -55,8 +52,7 @@ public class DesignService {
         this.preferencesService = preferencesService;
         this.promptFactory = promptFactory;
         this.planValidator = planValidator;
-        this.ollamaClient = ollamaClient;
-        this.ollamaProperties = ollamaProperties;
+        this.aiDesignProvider = aiDesignProvider;
         this.objectMapper = objectMapper;
     }
 
@@ -108,7 +104,7 @@ public class DesignService {
                             planJson,
                             plan.estimatedTotalCost(),
                             plan.currency().toUpperCase(),
-                            ollamaProperties.getModel()
+                            aiDesignProvider.getModelName()
                     )
             );
 
@@ -132,7 +128,7 @@ public class DesignService {
         String lastValidationError = null;
 
         for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
-            String rawResponse = ollamaClient.generateJson(
+            String rawResponse = aiDesignProvider.generateJson(
                     promptFactory.systemPrompt(),
                     promptFactory.userPrompt(
                             preferences,
