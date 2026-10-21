@@ -53,7 +53,11 @@ public class RecommendationResultRepository {
     }
 
     public Optional<SetRow> latest(UUID project) {
-        return jdbc.query("SELECT * FROM recommendation_sets WHERE project_id = ? ORDER BY id DESC LIMIT 1", SET, project).stream().findFirst();
+        return jdbc.query("""
+            SELECT s.* FROM recommendation_sets s JOIN design_results d
+                ON d.design_id = s.design_result_id AND d.project_id = s.project_id
+            WHERE s.project_id = ? ORDER BY s.id DESC LIMIT 1
+            """, SET, project).stream().findFirst();
     }
     public Optional<SetRow> set(long id) {
         return jdbc.query("SELECT * FROM recommendation_sets WHERE id = ?", SET, id).stream().findFirst();
@@ -64,6 +68,7 @@ public class RecommendationResultRepository {
     public Optional<ItemRow> item(UUID project, UUID item) {
         return jdbc.query("""
             SELECT i.* FROM recommendation_items i JOIN recommendation_sets s ON s.id = i.recommendation_set_id
+            JOIN design_results d ON d.design_id = s.design_result_id AND d.project_id = s.project_id
             WHERE s.project_id = ? AND i.public_id = ?
             """, ITEM, project, item).stream().findFirst();
     }
@@ -73,5 +78,11 @@ public class RecommendationResultRepository {
             WHERE recommendation_item_id = ? ORDER BY id DESC LIMIT 1
             """, (rs, row) -> new GuideRow(rs.getObject("public_id", UUID.class), rs.getString("payload"),
                 rs.getString("provider_metadata"), rs.getTimestamp("created_at").toInstant()), item).stream().findFirst();
+    }
+
+    public Optional<GuideRow> guide(UUID id) {
+        return jdbc.query("SELECT public_id, payload, provider_metadata, created_at FROM recommendation_diy_guides WHERE public_id = ?",
+                (rs, row) -> new GuideRow(rs.getObject("public_id", UUID.class), rs.getString("payload"),
+                        rs.getString("provider_metadata"), rs.getTimestamp("created_at").toInstant()), id).stream().findFirst();
     }
 }

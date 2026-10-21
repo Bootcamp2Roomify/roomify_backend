@@ -55,8 +55,9 @@ public class RecommendationResultService {
         if (!Boolean.TRUE.equals(savedItem.diyEligible()) || !set.currency().equals(payload.currency())) {
             throw new IllegalArgumentException("DIY guides must match an eligible item's saved currency.");
         }
-        repository.insertGuide(UUID.randomUUID(), item.id(), codec.writeGuide(payload), codec.writeMetadata(metadata));
-        return guideResponse(projectId, itemId, repository.latestGuide(item.id()).orElseThrow(this::missing));
+        UUID guideId = UUID.randomUUID();
+        repository.insertGuide(guideId, item.id(), codec.writeGuide(payload), codec.writeMetadata(metadata));
+        return guideResponse(projectId, itemId, repository.guide(guideId).orElseThrow(this::missing));
     }
 
     @Transactional(readOnly = true)
