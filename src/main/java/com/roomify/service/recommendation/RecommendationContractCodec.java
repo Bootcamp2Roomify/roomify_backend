@@ -120,7 +120,13 @@ public class RecommendationContractCodec {
     }
 
     private <T> T decode(String json, Class<T> type) {
-        try { return mapper.readValue(json, type); }
+        try {
+            var reader = mapper.readerFor(type);
+            if (type == GenerationMetadata.class) {
+                reader = reader.without(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES);
+            }
+            return reader.readValue(json);
+        }
         catch (JsonProcessingException | IllegalArgumentException exception) {
             // Parser diagnostics can include the supplied payload. Keep that out of API errors/logs.
             throw new IllegalArgumentException("Invalid recommendation contract.");

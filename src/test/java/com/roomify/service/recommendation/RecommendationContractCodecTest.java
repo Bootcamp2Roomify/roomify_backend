@@ -116,6 +116,12 @@ class RecommendationContractCodecTest {
         assertThatThrownBy(() -> codec.readSet(json.toString())).isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test void metadataRequestIdMayBeOmittedButRequiredFieldsRemainRequired() {
+        assertThat(codec.readMetadata("{\"provider\":\"local\",\"model\":\"fixture\",\"schemaVersion\":\"1.0\"}").requestId()).isNull();
+        assertThatThrownBy(() -> codec.readMetadata("{\"model\":\"fixture\",\"schemaVersion\":\"1.0\"}"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     @Test void validatesTypedPayloadAndMetadataAsWellAsJson() throws Exception {
         var valid = codec.readSet(fixture("recommendation-set"));
         var invalid = new com.roomify.dto.recommendation.RecommendationSet("1.0", "USD", valid.budget(),
