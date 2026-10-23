@@ -9,7 +9,10 @@ import org.springframework.web.client.RestClient;
 import java.net.http.HttpClient;
 
 @Configuration
-@EnableConfigurationProperties(AiProperties.class)
+@EnableConfigurationProperties({
+        AiProperties.class,
+        ImageGenerationProperties.class
+})
 public class AiConfig {
 
     @Bean
