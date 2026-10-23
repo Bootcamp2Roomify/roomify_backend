@@ -5,11 +5,14 @@ import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.exception.NoActiveImageException;
 import com.roomify.repository.RoomImageRepository;
+import com.roomify.repository.DetectedObjectRepository;
 import com.roomify.repository.RoomProjectRepository;
 import com.roomify.storage.RoomImageStoragePolicy;
 import com.roomify.storage.StorageService;
 import com.roomify.storage.StoredObject;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -26,22 +29,29 @@ public class RoomImageService {
     private final RoomImageRepository roomImageRepository;
     private final StorageService storageService;
     private final RoomImageStoragePolicy storagePolicy;
+    private final TransactionTemplate metadataTransaction;
+    private final DetectedObjectRepository detectedObjectRepository;
 
     public RoomImageService(
         RoomProjectRepository roomProjectRepository,
         RoomImageRepository roomImageRepository,
         StorageService storageService,
-        RoomImageStoragePolicy storagePolicy
+        RoomImageStoragePolicy storagePolicy,
+        PlatformTransactionManager transactionManager,
+        DetectedObjectRepository detectedObjectRepository
     ) {
         this.roomProjectRepository = roomProjectRepository;
         this.roomImageRepository = roomImageRepository;
         this.storageService = storageService;
         this.storagePolicy = storagePolicy;
+        this.metadataTransaction = new TransactionTemplate(transactionManager);
+        this.detectedObjectRepository = detectedObjectRepository;
     }
 
     public RoomImage upload(UUID projectId, MultipartFile file) {
-        RoomProject project = roomProjectRepository.findById(projectId)
-            .orElseThrow(() -> new IllegalArgumentException("Room project not found."));
+        if (!roomProjectRepository.existsById(projectId)) {
+            throw new IllegalArgumentException("Room project not found.");
+        }
 
         String contentType = file.getContentType();
         long size = file.getSize();
@@ -75,49 +85,28 @@ public class RoomImageService {
             new ByteArrayInputStream(bytes)
         );
 
-        RoomImage existing = roomImageRepository.findByProjectId(projectId).orElse(null);
-
-        if (existing == null) {
-            RoomImage roomImage = new RoomImage(
-                projectId,
-                storedObject.bucket(),
-                storedObject.key(),
-                originalFilename,
-                contentType,
-                size
-            );
-            roomImage.setDimensions(decoded.getWidth(), decoded.getHeight());
-
-            try {
-                RoomImage saved = roomImageRepository.saveAndFlush(roomImage);
-                markImageUploaded(project);
-                return saved;
-            } catch (RuntimeException e) {
-                storageService.delete(storedObject.key());
-                throw e;
+        String filename = originalFilename;
+        // Retain both old and unreferenced uploads: deleting here can remove a
+        // file whose metadata committed even if a later operation failed.
+        return metadataTransaction.execute(transaction -> {
+            RoomProject project = roomProjectRepository.findByIdForUpdate(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("Room project not found."));
+            RoomImage image = roomImageRepository.findByProjectId(projectId).orElse(null);
+            if (image == null) {
+                image = new RoomImage(projectId, storedObject.bucket(), storedObject.key(),
+                    filename, contentType, size);
+            } else {
+                image.replace(storedObject.bucket(), storedObject.key(), filename, contentType, size);
             }
-        }
-
-        String oldKey = existing.getStorageKey();
-
-        existing.replace(
-            storedObject.bucket(),
-            storedObject.key(),
-            originalFilename,
-            contentType,
-            size
-        );
-        existing.setDimensions(decoded.getWidth(), decoded.getHeight());
-
-        try {
-            RoomImage saved = roomImageRepository.saveAndFlush(existing);
-            markImageUploaded(project);
-            storageService.delete(oldKey);
+            image.setDimensions(decoded.getWidth(), decoded.getHeight());
+            RoomImage saved = roomImageRepository.saveAndFlush(image);
+            detectedObjectRepository.deactivateActiveByProjectId(projectId);
+            // Bulk deactivation clears the persistence context. Explicitly save
+            // the reset state even though the locked project is now detached.
+            project.setStatus(RoomProjectStatus.IMAGE_UPLOADED);
+            roomProjectRepository.save(project);
             return saved;
-        } catch (RuntimeException e) {
-            storageService.delete(storedObject.key());
-            throw e;
-        }
+        });
     }
 
     public RoomImage getActiveImage(UUID projectId) {
@@ -155,15 +144,4 @@ public class RoomImageService {
         }
     }
 
-    // A new image makes the project ready for (re-)analysis.
-    private void markImageUploaded(RoomProject project) {
-        RoomProjectStatus status = project.getStatus();
-
-        if (status == RoomProjectStatus.CREATED
-            || status == RoomProjectStatus.ANALYZED
-            || status == RoomProjectStatus.ANALYSIS_FAILED) {
-            project.setStatus(RoomProjectStatus.IMAGE_UPLOADED);
-            roomProjectRepository.save(project);
-        }
-    }
 }
