@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "currency": "ZZZ",
+  "budget": 100.0,
+  "estimatedTotal": 29.99,
+  "remainingBudget": 70.01,
+  "items": [
+    {
+      "name": "Desk lamp",
+      "category": "lighting",
+      "reason": "Improve desk lighting.",
+      "estimatedPrice": 19.99,
+      "cheaperAlternative": {
+        "name": "Basic lamp",
+        "reason": "Simpler shade.",
+        "searchQuery": "basic desk lamp",
+        "estimatedPrice": 12.5
+      },
+      "searchQuery": "adjustable desk lamp",
+      "diyEligible": false
+    },
+    {
+      "name": "Storage basket",
+      "category": "storage",
+      "reason": "Keep supplies together.",
+      "estimatedPrice": 10.0,
+      "cheaperAlternative": null,
+      "searchQuery": "small fabric storage basket",
+      "diyEligible": true
+    }
+  ]
+}
