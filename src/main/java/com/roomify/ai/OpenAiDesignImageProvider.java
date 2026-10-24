@@ -1,5 +1,6 @@
 package com.roomify.ai;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.roomify.config.AiProperties;
 import com.roomify.config.ImageGenerationProperties;
@@ -82,6 +83,7 @@ public class OpenAiDesignImageProvider implements DesignImageProvider {
         requestBody.add("quality", imageProperties.getQuality());
         requestBody.add("output_format", "png");
 
+        long started = System.nanoTime();
         try {
             OpenAiImageResponse response = restClient.post()
                     .uri("/images/edits")
@@ -92,14 +94,21 @@ public class OpenAiDesignImageProvider implements DesignImageProvider {
                     .retrieve()
                     .body(OpenAiImageResponse.class);
 
+            ImageUsage usage = response == null ? null : response.usage();
+            logger.info("AI usage kind=image model={} inputTokens={} outputTokens={} latencyMs={}",
+                    imageProperties.getModel(),
+                    usage == null ? null : usage.inputTokens(),
+                    usage == null ? null : usage.outputTokens(),
+                    (System.nanoTime() - started) / 1_000_000);
             return toGeneratedImage(response);
 
         } catch (RestClientResponseException exception) {
             int statusCode = exception.getStatusCode().value();
 
             logger.warn(
-                    "OpenAI image-edit request received HTTP status {}.",
-                    statusCode
+                    "OpenAI image-edit request received HTTP status {} ({}).",
+                    statusCode,
+                    OpenAiErrors.describe(exception.getResponseBodyAsString())
             );
 
             if (statusCode == 408 || statusCode == 429 || statusCode >= 500) {
@@ -219,7 +228,15 @@ public class OpenAiDesignImageProvider implements DesignImageProvider {
         }
     }
 
-    public record OpenAiImageResponse(List<ImageData> data) {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record OpenAiImageResponse(List<ImageData> data, ImageUsage usage) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ImageUsage(
+            @JsonProperty("input_tokens") Integer inputTokens,
+            @JsonProperty("output_tokens") Integer outputTokens
+    ) {
     }
 
     public record ImageData(

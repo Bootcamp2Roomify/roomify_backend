@@ -15,6 +15,10 @@ public class AiProperties {
     private Duration readTimeout = Duration.ofSeconds(60);
     private int maxOutputTokens = 800;
     private int maxRetries = 1;
+    /** Omitted from requests when null (reasoning models reject it). */
+    private Double temperature = 0.1;
+    /** Sent only when set, e.g. "low" for reasoning models such as gpt-6-luna. */
+    private String reasoningEffort;
 
     public String getProvider() {
         return provider;
@@ -78,5 +82,21 @@ public class AiProperties {
 
     public void setMaxRetries(int maxRetries) {
         this.maxRetries = maxRetries;
+    }
+
+    public Double getTemperature() {
+        return temperature;
+    }
+
+    public void setTemperature(Double temperature) {
+        this.temperature = temperature;
+    }
+
+    public String getReasoningEffort() {
+        return reasoningEffort;
+    }
+
+    public void setReasoningEffort(String reasoningEffort) {
+        this.reasoningEffort = reasoningEffort == null || reasoningEffort.isBlank() ? null : reasoningEffort;
     }
 }
