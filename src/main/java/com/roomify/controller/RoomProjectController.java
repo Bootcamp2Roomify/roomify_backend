@@ -7,8 +7,11 @@ import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.service.RoomProjectService;
 import com.roomify.service.ProjectPreferencesService;
+import com.roomify.security.CurrentUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,8 +35,8 @@ public class RoomProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<CreateProjectResponse> createProject() {
-        RoomProject project = service.createProject();
+    public ResponseEntity<CreateProjectResponse> createProject(@AuthenticationPrincipal Jwt jwt) {
+        RoomProject project = service.createProject(CurrentUser.id(jwt));
 
         CreateProjectResponse response = new CreateProjectResponse(
                 project.getId(),

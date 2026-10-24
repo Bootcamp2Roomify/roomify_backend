@@ -16,6 +16,9 @@ public class RoomProject {
     @Column(name = "status", nullable = false, length = 50)
     private RoomProjectStatus status;
 
+    @Column(name = "user_id", updatable = false)
+    private Long userId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -29,8 +32,17 @@ public class RoomProject {
         this.updatedAt = this.createdAt;
     }
 
+    public RoomProject(long userId) {
+        this();
+        this.userId = userId;
+    }
+
     public UUID getId() {
         return id;
+    }
+
+    public Long getUserId() {
+        return userId;
     }
 
     public RoomProjectStatus getStatus() {

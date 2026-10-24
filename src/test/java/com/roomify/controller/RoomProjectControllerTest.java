@@ -10,8 +10,13 @@ import com.roomify.exception.NoActiveImageException;
 import com.roomify.exception.ProjectExceptionHandler;
 import com.roomify.service.RoomProjectService;
 import com.roomify.service.ProjectPreferencesService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,6 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(RoomProjectController.class)
+// Controller slice only; authentication and ownership are covered by AuthSecurityTest.
+@AutoConfigureMockMvc(addFilters = false)
 class RoomProjectControllerTest {
 
     @Autowired
@@ -39,11 +46,18 @@ class RoomProjectControllerTest {
     @MockitoBean
     private ProjectPreferencesService preferences;
 
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
     void createProject_returns201AndNewProjectData() throws Exception {
         RoomProject project = new RoomProject();
 
-        given(service.createProject()).willReturn(project);
+        given(service.createProject(42L)).willReturn(project);
+        Jwt token = Jwt.withTokenValue("token").header("alg", "HS256").subject("42").build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(token));
 
         mockMvc.perform(post("/api/projects"))
                 .andExpect(status().isCreated())

@@ -1,5 +1,6 @@
 package com.roomify.controller;
 
+import com.roomify.support.TestUserSecurity;
 import com.roomify.dto.recommendation.GenerationMetadata;
 import com.roomify.service.recommendation.RecommendationContractCodec;
 import com.roomify.service.recommendation.RecommendationResultService;
@@ -30,7 +31,7 @@ class RecommendationControllerTest {
     final GenerationMetadata metadata = new GenerationMetadata("local", "fixture", "1.0", null);
     UUID project() {
         UUID id = UUID.randomUUID();
-        jdbc.update("INSERT INTO room_projects(project_id) VALUES (?)", id);
+        jdbc.update("INSERT INTO room_projects(project_id, user_id) VALUES (?, ?)", id, TestUserSecurity.USER_ID);
         jdbc.update("INSERT INTO project_preferences(project_id, style, budget_amount, currency, room_purpose) VALUES (?, 'MINIMALIST', 100, 'USD', 'LIVING')", id);
         return id;
     }
@@ -63,10 +64,11 @@ class RecommendationControllerTest {
 
     @Test void returnsSafe404ForMissingResultsAndCrossProjectGuide() throws Exception {
         UUID project = project(); UUID other = project();
-        for (UUID id : new UUID[]{project, UUID.randomUUID()}) {
-            mvc.perform(get("/api/projects/{project}/recommendations", id))
-                    .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("RECOMMENDATION_NOT_FOUND"));
-        }
+        mvc.perform(get("/api/projects/{project}/recommendations", project))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("RECOMMENDATION_NOT_FOUND"));
+        // Unknown or foreign projects are rejected by the ownership check before the controller.
+        mvc.perform(get("/api/projects/{project}/recommendations", UUID.randomUUID()))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("PROJECT_NOT_FOUND"));
         var set = service.storeSet(project, design(project), codec.readSet(fixture("recommendation-set")), metadata);
         UUID item = set.items().get(1).itemId();
         mvc.perform(get("/api/projects/{project}/recommendations/{item}/diy", project, item)).andExpect(status().isNotFound());

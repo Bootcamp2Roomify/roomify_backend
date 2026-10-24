@@ -1,5 +1,6 @@
 package com.roomify.controller;
 
+import com.roomify.support.TestUserSecurity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,7 +22,7 @@ class ProjectPreferencesControllerTest {
     @Autowired JdbcTemplate jdbc;
     private UUID project() {
         UUID id = UUID.randomUUID();
-        jdbc.update("INSERT INTO room_projects(project_id) VALUES (?)", id);
+        jdbc.update("INSERT INTO room_projects(project_id, user_id) VALUES (?, ?)", id, TestUserSecurity.USER_ID);
         return id;
     }
     private String body(String budget) {

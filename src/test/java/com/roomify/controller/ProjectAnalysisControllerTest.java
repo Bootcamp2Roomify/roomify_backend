@@ -1,5 +1,6 @@
 package com.roomify.controller;
 
+import com.roomify.support.TestUserSecurity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -131,13 +132,15 @@ class ProjectAnalysisControllerTest {
     private UUID createProject() {
         return jdbc.queryForObject("""
             INSERT INTO room_projects (
-                project_id
+                project_id,
+                user_id
             )
-            VALUES (?)
+            VALUES (?, ?)
             RETURNING project_id
             """,
             UUID.class,
-            UUID.randomUUID()
+            UUID.randomUUID(),
+            TestUserSecurity.USER_ID
         );
     }
 
