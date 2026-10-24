@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_DB: roomify
+          POSTGRES_USER: roomify
+          POSTGRES_PASSWORD: roomify_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U roomify -d roomify"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: roomify
+      DB_USERNAME: roomify
+      DB_PASSWORD: roomify_ci
+      # Test-only signing secret; never used outside CI.
+      JWT_SECRET: ci-only-jwt-secret-ci-only-jwt-secret-0123456789
+      STORAGE_TYPE: local
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Build and test
+        run: ./mvnw -B verify
+      - name: Build container image
+        run: docker build -t roomify-backend:ci .
