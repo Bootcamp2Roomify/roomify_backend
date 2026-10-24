@@ -1,6 +1,9 @@
 package com.roomify.controller;
 
+import com.roomify.dto.CreateProjectRequest;
 import com.roomify.dto.analysis.AnalyzeProjectResponse;
+import com.roomify.entity.RentalStatus;
+import com.roomify.entity.RoomType;
 import com.roomify.dto.analysis.BoundingBoxResponse;
 import com.roomify.dto.analysis.DetectedObjectResponse;
 import com.roomify.entity.FurnitureDecisionType;
@@ -55,11 +58,13 @@ class RoomProjectControllerTest {
     void createProject_returns201AndNewProjectData() throws Exception {
         RoomProject project = new RoomProject();
 
-        given(service.createProject(42L)).willReturn(project);
+        given(service.createProject(42L, new CreateProjectRequest("  My room ", RoomType.BEDROOM, RentalStatus.RENTAL)))
+                .willReturn(project);
         Jwt token = Jwt.withTokenValue("token").header("alg", "HS256").subject("42").build();
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(token));
 
-        mockMvc.perform(post("/api/projects"))
+        mockMvc.perform(post("/api/projects").contentType("application/json")
+                        .content("{\"name\":\"  My room \",\"roomType\":\"BEDROOM\",\"rentalStatus\":\"RENTAL\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(project.getId().toString()))
                 .andExpect(jsonPath("$.status").value("CREATED"));
