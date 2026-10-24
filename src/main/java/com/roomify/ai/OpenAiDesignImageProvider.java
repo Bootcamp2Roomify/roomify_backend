@@ -111,6 +111,11 @@ public class OpenAiDesignImageProvider implements DesignImageProvider {
                     OpenAiErrors.describe(exception.getResponseBodyAsString())
             );
 
+            // A rejected key is a configuration problem, not a transient failure.
+            if (statusCode == 401 || statusCode == 403) {
+                throw new AiProviderConfigurationException("OpenAI rejected the configured API key.");
+            }
+
             if (statusCode == 408 || statusCode == 429 || statusCode >= 500) {
                 throw new AiProviderRetryableException(
                         "Image generation is temporarily unavailable. Please try again.",
@@ -138,7 +143,7 @@ public class OpenAiDesignImageProvider implements DesignImageProvider {
     }
 
     private void validateConfiguration() {
-        if (!StringUtils.hasText(aiProperties.getApiKey())) {
+        if (!aiProperties.hasUsableApiKey()) {
             throw new AiProviderConfigurationException(
                     "AI_API_KEY is required when AI_PROVIDER=openai."
             );

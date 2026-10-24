@@ -44,6 +44,13 @@ public class AiProperties {
         this.model = model;
     }
 
+    /** False for a blank key or an unedited .env.example placeholder such as "your_openai_api_key". */
+    public boolean hasUsableApiKey() {
+        if (apiKey == null || apiKey.isBlank()) return false;
+        String key = apiKey.trim().toLowerCase(java.util.Locale.ROOT);
+        return !(key.startsWith("your_") || key.startsWith("your-") || key.startsWith("replace_with") || key.equals("changeme"));
+    }
+
     public String getApiKey() {
         return apiKey;
     }
