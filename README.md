@@ -34,7 +34,7 @@ Contracts: [`docs/api-contract.md`](docs/api-contract.md), [`docs/design/API.md`
 ## Stack
 
 Java 21 · Spring Boot 3.5.0 (Web, Validation, Data JPA, Security / OAuth2 resource server) ·
-PostgreSQL 17 + Flyway · OpenAI (`gpt-4o-mini` text, `gpt-image-1` image edits) · AWS S3 or local
+PostgreSQL 17 + Flyway · OpenAI (`gpt-4o-mini` text, `gpt-image-2.5-sunburst` image edits) · AWS S3 or local
 disk for images. Exact versions: [`docs/submission/DEPENDENCIES.md`](docs/submission/DEPENDENCIES.md).
 
 ## Run locally
@@ -64,8 +64,9 @@ everything works except generation, which returns `503 AI_CONFIGURATION_ERROR`.
 | `JWT_TTL` | `1h` | Access-token lifetime |
 | `OPENAI_API_KEY` | – | OpenAI key for plans, suggestions and images (`AI_API_KEY` overrides it for text) |
 | `AI_MODEL` | `gpt-4o-mini` | Text model |
-| `AI_IMAGE_MODEL`, `AI_IMAGE_SIZE`, `AI_IMAGE_QUALITY` | `gpt-image-1`, `1024x1024`, `low` | Visual concept |
-| `AI_READ_TIMEOUT`, `AI_MAX_OUTPUT_TOKENS`, `AI_MAX_RETRIES` | `60s`, `4000`, `1` | Provider limits |
+| `AI_IMAGE_MODEL`, `AI_IMAGE_SIZE`, `AI_IMAGE_QUALITY` | `gpt-image-2.5-sunburst`, `1024x1024`, `low` | Visual concept (gpt-image-1 was retired 2026-10-23) |
+| `AI_READ_TIMEOUT`, `AI_MAX_OUTPUT_TOKENS`, `AI_MAX_RETRIES` | `180s`, `4000`, `1` | Provider limits |
+| `AI_TEMPERATURE`, `AI_REASONING_EFFORT` | `0.1`, empty | Leave temperature empty and set effort (e.g. `low`) for reasoning models such as `gpt-6-luna` |
 | `CV_SERVICE_URL` (or `VISION_SERVICE_BASE_URL`) | `http://localhost:8000` | CV service |
 | `STORAGE_TYPE` | `local` | `local` or `s3` |
 | `STORAGE_LOCAL_ROOT` | `./storage` | Image folder when `local` |
