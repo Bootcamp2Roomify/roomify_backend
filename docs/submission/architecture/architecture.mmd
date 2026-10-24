@@ -1,0 +1,40 @@
+%% Roomify system architecture. Render: npx @mermaid-js/mermaid-cli -i architecture.mmd -o architecture.svg
+flowchart LR
+  user(["Person with a room photo<br/>(browser, desktop or phone)"])
+
+  subgraph FE["Frontend · Next.js 15 / React 19"]
+    pages["Pages<br/>dashboard · new room · review ·<br/>preferences · redesign workspace"]
+    bridge["Route handlers /api/*<br/>httpOnly session cookie → Bearer JWT"]
+  end
+
+  subgraph BE["Backend · Spring Boot 3.5 / Java 21"]
+    auth["Auth & ownership<br/>BCrypt · HS256 JWT · 404 for foreign projects"]
+    flow["Project workflow<br/>upload · analysis · decisions · preferences"]
+    gen["Generation + guardrails<br/>plan · prototype prompt · suggestions · DIY<br/>(budget, decision, rental & safety validation, 1 corrective retry)"]
+  end
+
+  subgraph CV["CV service · FastAPI"]
+    yolo["YOLO11n (COCO)<br/>bed · chair · sofa · table · tv · plant"]
+  end
+
+  subgraph AI["OpenAI API"]
+    llm["gpt-4o-mini<br/>JSON plans, suggestions, DIY"]
+    img["gpt-image-2.5-sunburst<br/>image edit of the user's photo"]
+  end
+
+  pg[("PostgreSQL 17<br/>users · projects · detections · decisions ·<br/>preferences · design requests/results ·<br/>recommendation sets · DIY guides")]
+  store[("Object storage<br/>AWS S3 (or local disk)<br/>room photos · generated concepts")]
+
+  user -- HTTPS --> pages
+  pages --> bridge
+  bridge -- "REST + Bearer" --> auth
+  auth --> flow
+  auth --> gen
+  flow -- "multipart photo" --> yolo
+  yolo -- "labels, confidence, normalized boxes" --> flow
+  gen -- "chat/completions (json_object)" --> llm
+  gen -- "images/edits (photo + plan prompt)" --> img
+  flow --> pg
+  gen --> pg
+  flow --> store
+  gen --> store

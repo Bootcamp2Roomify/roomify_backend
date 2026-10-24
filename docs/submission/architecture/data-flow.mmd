@@ -1,0 +1,38 @@
+%% Roomify request flow. Render: npx @mermaid-js/mermaid-cli -i data-flow.mmd -o data-flow.svg
+sequenceDiagram
+  participant U as Browser
+  participant F as Next.js bridge
+  participant B as Spring API
+  participant C as CV service
+  participant L as OpenAI text
+  participant I as OpenAI image
+  participant D as Postgres / S3
+  U->>F: upload photo (cookie)
+  F->>B: POST /projects/{id}/image (Bearer)
+  B->>D: store photo + metadata
+  U->>F: analyze
+  F->>B: POST /projects/{id}/analysis
+  B->>C: multipart photo
+  C-->>B: labels, confidence, boxes
+  B->>D: detections (stable UUIDs)
+  U->>F: decisions, edits, preferences
+  F->>B: PATCH/POST/PUT …
+  U->>F: generate redesign
+  F->>B: POST /projects/{id}/designs
+  B->>D: immutable input snapshot (PENDING)
+  B->>L: system rules + snapshot JSON
+  L-->>B: plan JSON
+  B->>B: validate (schema, decisions, budget, rental, uncertainty)
+  B->>D: plan (SUCCEEDED) or error code (FAILED)
+  U->>F: see it in my room
+  F->>B: POST /designs/{id}/prototype
+  B->>D: original photo from the snapshot
+  B->>I: images/edits (photo + plan-derived prompt)
+  I-->>B: image
+  B->>D: concept image
+  U->>F: suggestions / DIY
+  F->>B: POST /recommendations, POST …/{item}/diy
+  B->>L: plan + budget + rules
+  L-->>B: items / guide JSON
+  B->>B: recompute totals, cheaper-than check, rental and safety filters
+  B->>D: suggestion set / guide
