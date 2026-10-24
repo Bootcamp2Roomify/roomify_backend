@@ -1,7 +1,7 @@
 # Standalone isolated PostgreSQL 17 verification; no host ports or application volume.
 services:
   db:
-    image: postgres:17
+    image: postgres:17.11
     environment:
       POSTGRES_DB: roomify
       POSTGRES_USER: roomify
@@ -14,7 +14,7 @@ services:
       timeout: 5s
       retries: 30
   test:
-    image: maven:3.9-eclipse-temurin-21
+    image: maven:3.9.16-eclipse-temurin-21
     working_dir: /app
     volumes:
       - .:/app
