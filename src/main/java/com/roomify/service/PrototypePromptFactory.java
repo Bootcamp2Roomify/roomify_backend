@@ -16,17 +16,22 @@ import java.util.Locale;
 public class PrototypePromptFactory {
 
     public static final String VERSION = "prototype-v1";
-    private static final int MAX_LENGTH = 4000;
 
     public String build(DesignPlan plan, DesignRequestSnapshot snapshot) {
         var prompt = new StringBuilder();
-        prompt.append("Edit this photo of a real room into a photorealistic redesign concept. ")
-                .append("Keep the same camera position, perspective, lighting direction, walls, windows, doors, ")
-                .append("ceiling and floor layout. Do not add text, labels, people or watermarks.\n");
+        prompt.append("Edit this original room photo into one photorealistic redesign concept. ")
+            .append("Preserve the existing room architecture, doors, windows, ")
+            .append("camera viewpoint, perspective, and major room dimensions as much as possible. ")
+            .append("Keep the original walls, ceiling, floor layout, and natural lighting direction. ")
+            .append("Do not invent structural changes, new doors, windows, or walls. ")
+            .append("This is a conceptual visualization, not an exact architectural rendering. ")
+            .append("Do not add people, text, labels, or watermarks.\n");
         prompt.append("Style: ").append(humanize(plan.designStyle())).append('.');
         List<String> colors = snapshot.preferences().preferredColors();
         if (!colors.isEmpty()) prompt.append(" Color palette: ").append(String.join(", ", colors)).append('.');
         prompt.append('\n');
+        line(prompt, "Lighting: preserve the existing natural light direction; "
+        + "use balanced, soft ambient lighting appropriate to the selected style.");
 
         for (LayoutChange action : plan.actions()) {
             String item = action.objectClass();
@@ -47,8 +52,7 @@ public class PrototypePromptFactory {
                     + "use freestanding, removable pieces only.");
         }
         for (String constraint : plan.constraints()) line(prompt, "Constraint: " + constraint);
-        String result = prompt.toString();
-        return result.length() <= MAX_LENGTH ? result : result.substring(0, MAX_LENGTH);
+        return prompt.toString();
     }
 
     private static void line(StringBuilder prompt, String text) {
