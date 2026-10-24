@@ -66,7 +66,7 @@ public class RecommendationContractCodec {
         require(set != null);
         versionCurrency(set.schemaVersion(), set.currency());
         money(set.budget()); money(set.estimatedTotal()); money(set.remainingBudget());
-        require(set.items() != null && set.items().size() <= 6);
+        require(set.items() != null && set.items().size() >= 3 && set.items().size() <= 6);
         BigDecimal total = BigDecimal.ZERO;
         for (var item : set.items()) {
             validateItem(item);

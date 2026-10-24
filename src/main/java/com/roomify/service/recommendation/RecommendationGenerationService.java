@@ -128,8 +128,9 @@ public class RecommendationGenerationService {
 
     RecommendationSet toSet(String raw, ProjectPreferencesResponse saved) {
         GeneratedItems generated = read(raw, GeneratedItems.class);
-        if (generated.items() == null || generated.items().isEmpty() || generated.items().size() > 6) {
-            throw new IllegalArgumentException("Return between 1 and 6 items.");
+        if (generated.items() == null || generated.items().size() < 3 || generated.items().size() > 6) {
+            throw new IllegalArgumentException("Return between 3 and 6 recommended items."
+            );
         }
         List<RecommendationItem> items = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
