@@ -30,7 +30,10 @@ public class RecommendationPromptFactory {
               "estimatedPrice":0.00,"cheaperAlternative":{"name":"...","reason":"...","searchQuery":"...",
               "estimatedPrice":0.00} or null,"searchQuery":"...","diyEligible":true or false}]}
             RULES:
-            - 3 to 6 items when the budget allows, fewer only if the budget is too small. Never more than 6.
+            - Return exactly 3 to 6 recommendations, never fewer or more.
+            - Prioritize affordable items and budget-friendly DIY or repurposing ideas.
+            - Every recommendation must be relevant to the validated design plan.
+            - Keep the combined estimated prices within the user's budget.
             - Base items on the plan's itemsNeeded, REPLACE and ADD actions and budgetAllocation.
             - Never recommend buying a replacement for an item marked KEEP. You may include ONE "refresh"
               item for a KEEP object (paint, new handles, slipcover) priced at its materials, with diyEligible true.
