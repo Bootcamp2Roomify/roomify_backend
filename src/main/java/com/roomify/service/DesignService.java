@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roomify.ai.AiDesignProvider;
 import com.roomify.dto.ProjectPreferencesResponse;
-import com.roomify.dto.design.BudgetAllocation;
 import com.roomify.dto.design.DesignPlan;
 import com.roomify.dto.design.GenerateDesignResponse;
 import com.roomify.entity.DesignResult;
@@ -14,17 +13,19 @@ import com.roomify.entity.RoomProjectStatus;
 import com.roomify.repository.DesignResultRepository;
 import com.roomify.repository.FurnitureDecisionRepository;
 import com.roomify.repository.RoomProjectRepository;
+import com.roomify.exception.DesignGenerationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
 public class DesignService {
-
+    private static final Logger log =LoggerFactory.getLogger(DesignService.class);
     private static final int MAX_GENERATION_ATTEMPTS = 2;
 
     private final RoomProjectRepository roomProjectRepository;
@@ -120,73 +121,64 @@ public class DesignService {
         }
     }
 
-    private DesignPlan generateValidPlan(
-            ProjectPreferencesResponse preferences,
-            List<FurnitureDecision> furnitureDecisions
-    ) {
-        String retryInstruction = null;
-        String lastValidationError = null;
+private DesignPlan generateValidPlan(
+        ProjectPreferencesResponse preferences,
+        List<FurnitureDecision> furnitureDecisions
+) {
+    String retryInstruction = null;
 
-        for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
-            String rawResponse = aiDesignProvider.generateJson(
-                    promptFactory.systemPrompt(),
-                    promptFactory.userPrompt(
-                            preferences,
-                            furnitureDecisions,
-                            retryInstruction
-                    )
+    for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
+
+        String rawResponse = aiDesignProvider.generateJson(
+                promptFactory.systemPrompt(),
+                promptFactory.userPrompt(
+                        preferences,
+                        furnitureDecisions,
+                        retryInstruction
+                )
+        );
+
+        try {
+            DesignPlan plan = objectMapper.readValue(
+                    rawResponse,
+                    DesignPlan.class
             );
 
-            try {
-                DesignPlan plan = objectMapper.readValue(
-                        rawResponse,
-                        DesignPlan.class
-                );
+            planValidator.validate(
+                    plan,
+                    preferences,
+                    furnitureDecisions
+            );
 
-                plan = withCalculatedTotal(plan);
-
-                planValidator.validate(plan, preferences, furnitureDecisions);
-                return plan;
-            } catch (JsonProcessingException | IllegalArgumentException exception) {
-                lastValidationError = exception.getMessage();
-                retryInstruction = lastValidationError;
-            }
-        }
-
-        throw new IllegalStateException(
-                "Unable to generate a valid design plan after "
-                        + MAX_GENERATION_ATTEMPTS
-                        + " attempts. Last error: "
-                        + lastValidationError
-        );
-    }
-
-    private DesignPlan withCalculatedTotal(DesignPlan plan) {
-        if (plan == null || plan.budgetAllocation() == null) {
             return plan;
-        }
 
-        BigDecimal total = BigDecimal.ZERO;
+        } catch (JsonProcessingException | IllegalArgumentException exception) {
 
-        for (BudgetAllocation allocation : plan.budgetAllocation()) {
-            if (allocation == null || allocation.estimatedCost() == null) {
-                return plan;
+            // Log only error category and attempt number.
+            // Never log raw AI output or sensitive user data.
+            log.warn(
+                    "AI design validation failed: attempt={}, errorType={}",
+                    attempt,
+                    exception instanceof JsonProcessingException
+                            ? "JSON_PARSING_ERROR"
+                            : "PLAN_VALIDATION_ERROR"
+            );
+
+            // Provide feedback for one corrective retry.
+            if (attempt < MAX_GENERATION_ATTEMPTS) {
+                retryInstruction = exception instanceof JsonProcessingException
+                        ? "Previous response had invalid JSON or schema values. "
+                          + "Return a valid DesignPlan JSON object with correct fields and enum values."
+                        : exception.getMessage();
             }
-
-            total = total.add(allocation.estimatedCost());
         }
-
-        return new DesignPlan(
-                plan.designRationale(),
-                plan.layoutChanges(),
-                plan.budgetAllocation(),
-                total,
-                plan.currency(),
-                plan.rentalFriendlyNotes(),
-                plan.warnings()
-        );
     }
 
+    // Never expose raw validation details to the frontend.
+    throw new DesignGenerationException(
+            "Unable to generate a valid design plan."
+    );
+}
     private GenerateDesignResponse toResponse(
             DesignResult result,
             DesignPlan plan

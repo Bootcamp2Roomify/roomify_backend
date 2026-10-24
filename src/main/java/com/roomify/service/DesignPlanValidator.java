@@ -125,6 +125,25 @@ public class DesignPlanValidator {
         if (plan.layoutChanges() == null) {
             throw new IllegalArgumentException("layoutChanges is required.");
         }
+    for (LayoutChange change : plan.layoutChanges()) {
+        if (change == null) {
+            throw new IllegalArgumentException(
+                    "layoutChanges cannot contain null items."
+            );
+        }
+
+        if (change.objectUuid() == null) {
+            throw new IllegalArgumentException(
+                    "layoutChanges.objectUuid is required."
+            );
+        }
+
+        if (change.decision() == null) {
+            throw new IllegalArgumentException(
+                    "layoutChanges.decision is required."
+            );
+        }
+}
 
         Map<UUID, FurnitureDecision> inputByObjectUuid =
                 furnitureDecisions.stream().collect(Collectors.toMap(

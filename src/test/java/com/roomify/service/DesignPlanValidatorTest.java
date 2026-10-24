@@ -185,7 +185,149 @@ class DesignPlanValidatorTest {
         assertTrue(exception.getMessage().contains("Low-confidence"));
     }
 
-    private FurnitureDecision furnitureDecision(
+    @Test
+    void rejectsLayoutChangeWithNullDecision() {
+        FurnitureDecision furnitureDecision = furnitureDecision(
+                FurnitureDecisionType.KEEP,
+                new BigDecimal("0.95")
+        );
+
+        DesignPlan plan = plan(
+                new LayoutChange(
+                        furnitureDecision.getDetectedObject().getObjectUuid(),
+                        "bed",
+                        null,
+                        "Keep the bed in its current position.",
+                        "The bed is in good condition."
+                ),
+                standardAllocation(),
+                false
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> validator.validate(
+                        plan,
+                        preferences(false),
+                        List.of(furnitureDecision)
+                )
+        );
+
+        assertTrue(
+                exception.getMessage().contains(
+                        "layoutChanges.decision is required"
+                )
+        );
+        }
+
+    @Test
+    void rejectsPlanThatExceedsUserBudget() {
+        FurnitureDecision furnitureDecision = furnitureDecision(
+                FurnitureDecisionType.KEEP,
+                new BigDecimal("0.95")
+        );
+
+        ProjectPreferencesResponse preferences = new ProjectPreferencesResponse(
+                UUID.randomUUID(),
+                "Modern",
+                new BigDecimal("9000"),
+                "TWD",
+                List.of("white", "blue"),
+                "Bedroom",
+                false,
+                "Keep the room affordable.",
+                new BigDecimal("1000000.00")
+        );
+
+        DesignPlan plan = new DesignPlan(
+                "A modern bedroom refresh.",
+                List.of(new LayoutChange(
+                        furnitureDecision.getDetectedObject().getObjectUuid(),
+                        "bed",
+                        FurnitureDecisionType.KEEP,
+                        "Keep the bed in its current position.",
+                        "The bed is in good condition."
+                )),
+                List.of(
+                        new BudgetAllocation(
+                                "Furniture",
+                                "Desk",
+                                "Adds workspace.",
+                                new BigDecimal("5000")
+                        ),
+                        new BudgetAllocation(
+                                "Lighting",
+                                "Lamp",
+                                "Improves lighting.",
+                                new BigDecimal("4600")
+                        )
+                ),
+                new BigDecimal("9600"),
+                "TWD",
+                List.of(),
+                List.of()
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> validator.validate(
+                        plan,
+                        preferences,
+                        List.of(furnitureDecision)
+                )
+        );
+
+        assertTrue(
+                exception.getMessage().contains("exceeds the user's budget")
+        );
+        }
+
+    @Test
+    void rejectsPlanWithIncorrectAllocationTotal() {
+        FurnitureDecision furnitureDecision = furnitureDecision(
+            FurnitureDecisionType.KEEP,
+            new BigDecimal("0.95")
+    );
+
+        DesignPlan validPlan = plan(
+            new LayoutChange(
+                    furnitureDecision.getDetectedObject().getObjectUuid(),
+                    "bed",
+                    FurnitureDecisionType.KEEP,
+                    "Keep the bed in its current position.",
+                    "The bed is in good condition."
+            ),
+            standardAllocation(),
+            false
+    );
+
+        // Allocation is 35.00, but AI declares 30.00.
+         DesignPlan invalidPlan = new DesignPlan(
+            validPlan.designRationale(),
+            validPlan.layoutChanges(),
+            validPlan.budgetAllocation(),
+            new BigDecimal("30.00"),
+            validPlan.currency(),
+            validPlan.rentalFriendlyNotes(),
+            validPlan.warnings()
+    );
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> validator.validate(
+                    invalidPlan,
+                    preferences(false),
+                    List.of(furnitureDecision)
+            )
+    );
+
+        assertTrue(
+            exception.getMessage().contains(
+                    "estimatedTotalCost must equal the sum"
+            )
+    );
+}
+private FurnitureDecision furnitureDecision(
             FurnitureDecisionType decision,
             BigDecimal confidence
     ) {
