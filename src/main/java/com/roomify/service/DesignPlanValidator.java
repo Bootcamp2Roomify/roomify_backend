@@ -64,9 +64,87 @@ public class DesignPlanValidator {
         if(snapshot.preferences().rentalFriendly()) validateRentalFriendlyPlan(plan);
     }
 
-    private void validateInstructionMatchesDecision(LayoutChange change) {
-        String instruction=change.instruction().trim().toLowerCase(Locale.ROOT);
-        switch(change.decision()) {
+    private void validateFurnitureDecisions(
+            DesignPlan plan,
+            List<FurnitureDecision> furnitureDecisions
+    ) {
+        if (plan.layoutChanges() == null) {
+            throw new IllegalArgumentException("layoutChanges is required.");
+        }
+    for (LayoutChange change : plan.layoutChanges()) {
+        if (change == null) {
+            throw new IllegalArgumentException(
+                    "layoutChanges cannot contain null items."
+            );
+        }
+
+        if (change.objectUuid() == null) {
+            throw new IllegalArgumentException(
+                    "layoutChanges.objectUuid is required."
+            );
+        }
+
+        if (change.decision() == null) {
+            throw new IllegalArgumentException(
+                    "layoutChanges.decision is required."
+            );
+        }
+}
+
+        Map<UUID, FurnitureDecision> inputByObjectUuid =
+                furnitureDecisions.stream().collect(Collectors.toMap(
+                        decision -> decision.getDetectedObject().getObjectUuid(),
+                        decision -> decision
+                ));
+
+        Map<UUID, FurnitureDecisionType> expectedDecisions =
+                furnitureDecisions.stream().collect(Collectors.toMap(
+                        decision -> decision.getDetectedObject().getObjectUuid(),
+                        FurnitureDecision::getDecision
+                ));
+
+        Map<UUID, FurnitureDecisionType> actualDecisions =
+                plan.layoutChanges().stream().collect(Collectors.toMap(
+                        LayoutChange::objectUuid,
+                        LayoutChange::decision,
+                        (first, second) -> {
+                            throw new IllegalArgumentException(
+                                    "layoutChanges contains a duplicate objectUuid."
+                            );
+                        }
+                ));
+
+        if (!actualDecisions.equals(expectedDecisions)) {
+            throw new IllegalArgumentException(
+                    "layoutChanges must include every furniture object with its original decision."
+            );
+        }
+
+        for (LayoutChange change : plan.layoutChanges()) {
+            requireText(change.objectClass(), "layoutChanges.objectClass");
+            requireText(change.action(), "layoutChanges.action");
+            requireText(change.rationale(), "layoutChanges.rationale");
+
+            FurnitureDecision inputDecision = inputByObjectUuid.get(change.objectUuid());
+
+            if (inputDecision == null) {
+                throw new IllegalArgumentException(
+                        "layoutChanges contains an unknown objectUuid."
+                );
+            }
+
+            validateActionMatchesDecision(change, inputDecision.getDecision());
+            validateLowConfidenceUncertainty(change, inputDecision);
+        }
+    }
+
+    private void validateActionMatchesDecision(
+            LayoutChange change,
+            FurnitureDecisionType decision
+    ) {
+        String action = change.action().trim().toLowerCase(Locale.ROOT);
+
+        switch (decision) {
             case KEEP -> {
                 if(!instruction.startsWith("keep ")) invalid("KEEP object instructions must begin with 'Keep '.");
                 if(containsAny(instruction,List.of("replace","remove","store","discard","sell")))

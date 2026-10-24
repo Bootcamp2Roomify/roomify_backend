@@ -94,7 +94,16 @@ public class ProjectExceptionHandler {
                         "Design generation is temporarily unavailable. Please retry."
                 ));
     }
-
+    @ExceptionHandler(DesignGenerationException.class)
+    public ResponseEntity<ApiError> handleDesignGenerationFailure(
+                DesignGenerationException exception
+        ) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new ApiError(
+                        "DESIGN_GENERATION_FAILED",
+                        "Unable to generate a valid design plan. Please retry."
+                ));
+        }
     public record ApiError(String code, String message) {
     }
 }

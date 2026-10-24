@@ -1,13 +1,26 @@
 package com.roomify.service;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.cfg.*;
-import com.fasterxml.jackson.databind.type.LogicalType;
-import com.roomify.ai.*;
-import com.roomify.config.AiProperties;
-import com.roomify.dto.design.*;
-import com.roomify.exception.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.roomify.ai.AiDesignProvider;
+import com.roomify.dto.ProjectPreferencesResponse;
+import com.roomify.dto.design.DesignPlan;
+import com.roomify.dto.design.GenerateDesignResponse;
+import com.roomify.entity.DesignResult;
+import com.roomify.entity.FurnitureDecision;
+import com.roomify.entity.RoomProject;
+import com.roomify.entity.RoomProjectStatus;
+import com.roomify.repository.DesignResultRepository;
+import com.roomify.repository.FurnitureDecisionRepository;
+import com.roomify.repository.RoomProjectRepository;
+import com.roomify.exception.DesignGenerationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
