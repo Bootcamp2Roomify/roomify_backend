@@ -1,5 +1,6 @@
 package com.roomify.controller;
 
+import com.roomify.support.TestUserSecurity;
 import com.roomify.entity.RoomProject;
 import com.roomify.entity.RoomProjectStatus;
 import com.roomify.client.VisionServiceClient;
@@ -358,9 +359,10 @@ class RoomImageControllerTest {
 
     private UUID createProject() {
         return jdbc.queryForObject(
-            "INSERT INTO room_projects (project_id) VALUES (?) RETURNING project_id",
+            "INSERT INTO room_projects (project_id, user_id) VALUES (?, ?) RETURNING project_id",
             UUID.class,
-            UUID.randomUUID()
+            UUID.randomUUID(),
+            TestUserSecurity.USER_ID
         );
     }
 

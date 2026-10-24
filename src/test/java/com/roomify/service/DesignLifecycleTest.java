@@ -1,5 +1,6 @@
 package com.roomify.service;
 
+import com.roomify.support.TestUserSecurity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roomify.ai.AiDesignProvider;
 import com.roomify.dto.design.*;
@@ -45,7 +46,7 @@ class DesignLifecycleTest {
     @AfterEach void cleanup() { for(UUID id:projects) jdbc.update("DELETE FROM room_projects WHERE project_id=?",id); projects.clear(); }
     UUID seed() {
         UUID id=UUID.randomUUID();projects.add(id);
-        jdbc.update("INSERT INTO room_projects(project_id,status) VALUES(?,'PREFERENCES_READY')",id);
+        jdbc.update("INSERT INTO room_projects(project_id,status,user_id) VALUES(?,'PREFERENCES_READY',?)",id,TestUserSecurity.USER_ID);
         jdbc.update("""
             INSERT INTO project_preferences(project_id,style,budget_amount,currency,room_purpose,rental_friendly)
             VALUES(?,'SCANDINAVIAN',9000,'TWD','STUDY_AND_SLEEP',TRUE)

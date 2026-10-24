@@ -46,8 +46,8 @@ public class RoomProjectService {
     }
 
     @Transactional
-    public RoomProject createProject() {
-        return repository.save(new RoomProject());
+    public RoomProject createProject(long userId) {
+        return repository.save(new RoomProject(userId));
     }
 
     @Transactional(readOnly = true)

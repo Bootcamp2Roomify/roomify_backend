@@ -1,5 +1,6 @@
 package com.roomify.controller;
 
+import com.roomify.support.TestUserSecurity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -123,12 +124,13 @@ class FurnitureDecisionControllerTest {
         jdbc.update("""
                 INSERT INTO room_projects (
                     project_id,
+                    user_id,
                     status,
                     created_at,
                     updated_at
                 )
-                VALUES (?, 'IMAGE_UPLOADED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                """, projectId);
+                VALUES (?, ?, 'IMAGE_UPLOADED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, projectId, TestUserSecurity.USER_ID);
 
         return projectId;
     }
