@@ -103,3 +103,49 @@ Fixes found on the way: `ai.api-key` ignored `OPENAI_API_KEY`; compose had a dup
 Pre-existing (on develop before any change): 7 mocked Playwright specs fail on chromium
 (backendBridge ×3, roomFlow ×2, detectionReview ×2, the last flaky). Scheduled for step 3.
 Local-dev note: Next normalizes `127.0.0.1` to `localhost` in redirects; use `http://localhost:3000`.
+
+## Phase 1 / Step 2 — features (continued)
+
+| Repo | PR | Feature | Tests |
+|---|---|---|---|
+| backend | #30 | F2/F11 project details + paginated owner-scoped list | 122 |
+| backend | #31 | F4 add / relabel / remove items; continue manually after failed analysis | 124 |
+| backend | #32 | ROOM-93/95 visual prototype prompt + generation endpoint | 122 |
+| backend | #33 | ROOM-97/99/100 recommendation + DIY generation, server-computed totals, safety filter; contract gains `placement` | 131 |
+| frontend | #17 | F2/F11 create-project form, dashboard, resume upload; fixed 7 pre-existing e2e failures | 215 unit, 39 e2e |
+| frontend | #18 | F4 rename / remove / add in review; manual path on failed analysis | 221 |
+| frontend | #19 | F6–F10 design workspace: plan, concept, suggestions, DIY, budget summary | 222 |
+
+## Phase 1 / Step 3 — regression (2026-10-24)
+
+- Real stack (Postgres 17 + CV + backend jar + `next start`) driven by Playwright (`tests/live`,
+  frontend#20): journey, privacy, logout, CV-down manual entry **pass**; DB state verified by SQL.
+- Bugs found and fixed: phones could not reach the dashboard (nav CSS); review button style leak;
+  middleware host normalization; analyze helper race (test).
+- **Blocked:** AI happy path (plan, concept, suggestions, DIY) needs `OPENAI_API_KEY` — still not set.
+
+## Provider changes discovered (2026-10-24)
+
+- OpenAI shut down `gpt-image-1` on 2026-10-23 → default switched to `gpt-image-2.5-sunburst`
+  (backend#36, untested live). `gpt-4o-mini` shuts down 2027-01-14; text requests now support
+  reasoning models (`gpt-6-luna`) by configuration.
+
+## Phase 3 — hardening and package
+
+| PR | Change |
+|---|---|
+| cv#6, backend#34, frontend#21 | exact pins, pinned images, non-root containers, CV Dockerfile |
+| cv#7 | **security:** SSRF via `/v1/analyze image_url` blocked |
+| backend#35, cv#8, frontend#22 | READMEs, accurate `.env.example` |
+| backend#36 | retired image model, reasoning-model-ready requests, usage logging |
+| frontend#23 | 1080p demo recording spec |
+
+Docs in this folder: REPORT.md, EVALUATION.md (detection measured), DEPENDENCIES.md, DEPLOYMENT.md
+(proposal, not deployed), REPOS.md, architecture/, video/.
+
+## Open items (owner)
+
+1. `OPENAI_API_KEY` in `roomify_backend/.env` → then: live AI regression, generation metrics, demo
+   recording, release v1.0.0.
+2. Approve (or not) the deployment proposal and provide hosting credentials.
+3. Licensing: Ultralytics is AGPL-3.0; roomify_cv is labelled MIT.
