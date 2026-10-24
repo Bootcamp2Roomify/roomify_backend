@@ -69,19 +69,30 @@ public class RecommendationContractCodec {
         require(set.items() != null && set.items().size() <= 6);
         BigDecimal total = BigDecimal.ZERO;
         for (var item : set.items()) {
-            require(item != null);
-            text(item.name()); text(item.category()); text(item.reason()); text(item.searchQuery());
-            money(item.estimatedPrice()); require(item.diyEligible() != null);
-            if (item.cheaperAlternative() != null) {
-                var alt = item.cheaperAlternative();
-                text(alt.name()); text(alt.reason()); text(alt.searchQuery()); money(alt.estimatedPrice());
-                require(alt.estimatedPrice().compareTo(item.estimatedPrice()) < 0);
-            }
+            validateItem(item);
             total = total.add(item.estimatedPrice());
         }
         require(total.compareTo(set.estimatedTotal()) == 0);
         require(total.compareTo(set.budget()) <= 0);
         require(set.budget().subtract(total).compareTo(set.remainingBudget()) == 0);
+    }
+
+    String writeItem(RecommendationItem item) { validateItem(item); return encode(item); }
+    RecommendationItem readItem(String json) {
+        var item = decode(json, RecommendationItem.class);
+        validateItem(item);
+        return item;
+    }
+
+    private void validateItem(RecommendationItem item) {
+        require(item != null);
+        text(item.name()); text(item.category()); text(item.reason()); text(item.searchQuery());
+        money(item.estimatedPrice()); require(item.diyEligible() != null);
+        if (item.cheaperAlternative() != null) {
+            var alt = item.cheaperAlternative();
+            text(alt.name()); text(alt.reason()); text(alt.searchQuery()); money(alt.estimatedPrice());
+            require(alt.estimatedPrice().compareTo(item.estimatedPrice()) < 0);
+        }
     }
 
     public void validate(DIYGuide guide) {
