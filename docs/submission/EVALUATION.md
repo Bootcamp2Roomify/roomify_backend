@@ -1,4 +1,4 @@
-# Evaluation
+# Evaluation Evidence
 
 All numbers here were measured on 2026-10-24 by running the code in this repository; nothing is
 estimated or copied from model cards. Where something has **not been measured yet**, it says so.
@@ -36,15 +36,17 @@ labelled "please check". Beds and TVs are reliable; tables are not (0.40 precisi
 
 ### Failure cases
 
-Green = ground truth, red = prediction with confidence. Images © their Flickr authors via COCO
-(CC BY 4.0 annotations); shown for evaluation only.
+In each figure, green boxes are ground truth and red boxes are predictions with their confidence.
+Images are copyright their Flickr authors via COCO (annotations CC BY 4.0) and are shown for
+evaluation only.
 
-| Image | What went wrong |
-|---|---|
-| ![](evaluation/failures/coco-47769.jpg) | A wooden **window shutter is detected as a chair (0.50)**; two partly hidden chairs and a small table are missed; the floor lamp cannot be detected at all (COCO has no lamp class). |
-| ![](evaluation/failures/coco-39477.jpg) | Sofa and TV found correctly, but **two hanging planters merge into one box** (one FP + one FN) and three small plants (< 3 % of the frame) are missed. |
-| ![](evaluation/failures/coco-13923.jpg) | Bright, well-lit living room: the sofa (0.90) and the large chairs are found, but seven smaller objects (each ≤ 5.5 % of the image — chairs behind the table, the window-sill plants, the tv) are missed. No false alarms: small items are where recall drops. |
-| ![](evaluation/failures/coco-14038.jpg) | Cluttered studio: the bed is found; the tv, a small table and other items under 5 % of the frame are missed. The plant on the shelf **is** detected, but its box overlaps the annotation by less than IoU 0.5, so one localization error counts as both a false alarm and a miss. |
+![Failure case COCO 47769: a wooden window shutter is detected as a chair (confidence 0.50); two partly hidden chairs and a small table are missed; the floor lamp cannot be detected at all because COCO has no lamp class.](evaluation/failures/coco-47769.jpg)
+
+![Failure case COCO 39477: the sofa and TV are found, but two hanging planters merge into one box (one false positive and one miss) and three small plants under 3 % of the frame are missed.](evaluation/failures/coco-39477.jpg)
+
+![Failure case COCO 13923: in a bright living room the sofa (0.90) and large chairs are found, but seven smaller objects (each at most 5.5 % of the image) are missed; there are no false alarms.](evaluation/failures/coco-13923.jpg)
+
+![Failure case COCO 14038: in a cluttered studio the bed is found; the TV, a small table and other items under 5 % of the frame are missed. The shelf plant is detected but overlaps its annotation by less than IoU 0.5, so one localisation error counts as both a false alarm and a miss.](evaluation/failures/coco-14038.jpg)
 
 ### Limitations of this measurement
 

@@ -1,39 +1,34 @@
-%% Roomify system architecture. Render: npx @mermaid-js/mermaid-cli -i architecture.mmd -o architecture.svg
-flowchart LR
-  user(["Person with a room photo<br/>(browser, desktop or phone)"])
+%% Roomify system architecture. Rendered by docs/submission/build.sh.
+flowchart TB
+  user(["Person with a room photo · browser, desktop or phone"])
 
-  subgraph FE["Frontend · Next.js 15 / React 19"]
+  subgraph FE["Roomify frontend · Next.js 15 / React 19"]
+    direction LR
     pages["Pages<br/>dashboard · new room · review ·<br/>preferences · redesign workspace"]
-    bridge["Route handlers /api/*<br/>httpOnly session cookie → Bearer JWT"]
+    bridge["Route handlers /api/*<br/>httpOnly session cookie → Bearer token"]
   end
 
-  subgraph BE["Backend · Spring Boot 3.5 / Java 21"]
-    auth["Auth & ownership<br/>BCrypt · HS256 JWT · 404 for foreign projects"]
+  subgraph BE["Roomify API · Spring Boot 3.5 / Java 21"]
+    direction LR
+    auth["Auth and ownership<br/>BCrypt · HS256 JWT · 404 for foreign projects"]
     flow["Project workflow<br/>upload · analysis · decisions · preferences"]
-    gen["Generation + guardrails<br/>plan · prototype prompt · suggestions · DIY<br/>(budget, decision, rental & safety validation, 1 corrective retry)"]
+    gen["Generation and guardrails<br/>plan · concept · suggestions · DIY<br/>budget, decision, rental and safety checks"]
   end
 
-  subgraph CV["CV service · FastAPI"]
-    yolo["YOLO11n (COCO)<br/>bed · chair · sofa · table · tv · plant"]
-  end
-
-  subgraph AI["OpenAI API"]
-    llm["gpt-4o-mini<br/>JSON plans, suggestions, DIY"]
-    img["gpt-image-2.5-sunburst<br/>image edit of the user's photo"]
-  end
-
-  pg[("PostgreSQL 17<br/>users · projects · detections · decisions ·<br/>preferences · design requests/results ·<br/>recommendation sets · DIY guides")]
-  store[("Object storage<br/>AWS S3 (or local disk)<br/>room photos · generated concepts")]
+  cv["Roomify CV service · FastAPI<br/>YOLO11n: bed · chair · sofa · table · tv · plant"]
+  llm["OpenAI gpt-4o-mini<br/>JSON plans, suggestions, DIY"]
+  img["OpenAI gpt-image-2.5-sunburst<br/>edits the user's photo"]
+  pg[("PostgreSQL 17<br/>projects, detections, decisions,<br/>designs, suggestions, guides")]
+  store[("Object storage · AWS S3<br/>room photos, concepts")]
 
   user -- HTTPS --> pages
   pages --> bridge
   bridge -- "REST + Bearer" --> auth
   auth --> flow
   auth --> gen
-  flow -- "multipart photo" --> yolo
-  yolo -- "labels, confidence, normalized boxes" --> flow
-  gen -- "chat/completions (json_object)" --> llm
-  gen -- "images/edits (photo + plan prompt)" --> img
+  flow -- "photo" --> cv
+  gen -- "chat completions" --> llm
+  gen -- "image edits" --> img
   flow --> pg
   gen --> pg
   flow --> store

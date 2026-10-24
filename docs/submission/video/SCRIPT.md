@@ -1,6 +1,6 @@
-# Demo video — script and shot list
+# Roomify demo video — script and shot list
 
-Target 4:30 (hard limit 5:00). **Draft cut:** [`roomify-demo-draft.mp4`](roomify-demo-draft.mp4)
+Target 4:30 (hard limit 5:00). **Draft cut:** [`Roomify - Demo (draft).mp4`](<Roomify - Demo (draft).mp4>)
 (1920×1080, H.264, 2:55) built on 2026-10-24 from real-stack recordings; AI scenes are slates.
 
 How it is made:
@@ -8,7 +8,7 @@ How it is made:
 1. Start the stack (Postgres, CV, backend, `next start`).
 2. Record: `LIVE_RECORD=1 LIVE_SLOWMO=350 npx playwright test -c playwright.live.config.ts -g walkthrough`
    in roomify_frontend (add `LIVE_AI=1` once an OpenAI key is configured to record scenes 7–9).
-3. Assemble: `video/assemble.sh <roomify_frontend>/test-results/walkthrough architecture/architecture.png roomify-demo.mp4`.
+3. Assemble: `video/assemble.sh <roomify_frontend>/test-results/walkthrough architecture/architecture.png "video/Roomify - Demo.mp4"`.
 4. Replace the placeholders and add the voice-over in any editor.
 
 Status: **recorded** = real footage in the draft · **pending: requires OpenAI key** = slate in the

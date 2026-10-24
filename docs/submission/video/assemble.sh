@@ -29,15 +29,15 @@ clip() { # scene-dir name
 }
 pending() { slate "$1" 6 "[PENDING: requires OpenAI key]" "$2"; }
 
-slate 00 20 "[PLACEHOLDER] Team intro" "Team Bootcamp2Roomify — names and roles"
-slate 01 20 "Imagine your own room" "Students and renters can't picture a redesign in their room, can't see the total cost, can't drill or paint, and throw away usable furniture."
+slate 00 20 "[PLACEHOLDER] Team intro" "Roomify · Team Bootcamp2Roomify — names and roles"
+slate 01 20 "Roomify" "Redesign the room you actually have.<br>Students and renters can't picture a redesign in their room, can't see the total cost, can't drill or paint, and throw away usable furniture."
 clip 01-signup 02; clip 02-create-upload 03; clip 03-review 04; clip 04-preferences 05; clip 05-dashboard 06
-clip 06-plan 07 || pending 07 "Redesign plan: keeps what you kept, fits the budget, rental-safe"
-clip 07-concept 08 || pending 08 "Visual concept: your own photo, redesigned"
-clip 08-suggestions 09 || pending 09 "Suggestions, cheaper options and a DIY guide within budget"
+clip 06-plan 07 || pending 07 "Roomify redesign plan: keeps what you kept, fits the budget, rental-safe"
+clip 07-concept 08 || pending 08 "Roomify visual concept: your own photo, redesigned"
+clip 08-suggestions 09 || pending 09 "Roomify suggestions, cheaper options and a DIY guide within budget"
 still "$ARCH" 15 10
-slate 11 15 "Measured results" "Detection on 60 held-out COCO rooms: precision 0.70 · recall 0.62 · 32 ms per photo<br>AI quality, latency and cost: pending — requires OpenAI key"
-slate 12 10 "[PLACEHOLDER] Thank you" "github.com/Bootcamp2Roomify"
+slate 11 15 "Roomify · Measured results" "Detection on 60 held-out COCO rooms: precision 0.70 · recall 0.62 · 32 ms per photo<br>AI quality, latency and cost: pending — requires OpenAI key"
+slate 12 10 "[PLACEHOLDER] Thank you" "Roomify · github.com/Bootcamp2Roomify"
 
 for f in $(ls "$WORK"/*.mp4 | sort); do echo "file '$f'"; done > "$WORK/list.txt"
 ffmpeg -loglevel error -y -f concat -safe 0 -i "$WORK/list.txt" -c copy "$OUT"

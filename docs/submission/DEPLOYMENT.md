@@ -1,19 +1,11 @@
-# Deployment proposal (not deployed)
+# Deployment
 
 **Status: proposal only.** No cloud resources have been created. Every step below needs the project
 owner's approval and their own credentials.
 
 ## Recommendation: Vercel + Fly.io + Neon + existing S3
 
-```mermaid
-flowchart LR
-  B[Browser] -- HTTPS --> V["Vercel (Hobby)<br/>Next.js frontend"]
-  V -- "HTTPS + Bearer" --> A["Fly.io app roomify-api<br/>Spring Boot · 1 GB"]
-  A -- "private network only<br/>(no public port)" --> C["Fly.io app roomify-cv<br/>FastAPI + YOLO11n · 1 GB"]
-  A --> N[("Neon Postgres<br/>Free plan")]
-  A --> S[("AWS S3 bucket<br/>(already exists)")]
-  A --> O["OpenAI API"]
-```
+![Proposed Roomify deployment: Vercel for the frontend, Fly.io for the API and a private CV service, Neon Postgres, the existing S3 bucket and the OpenAI API.](architecture/deployment.png)
 
 Why this shape:
 

@@ -1,0 +1,10 @@
+{
+  "name": "roomify-submission-build",
+  "private": true,
+  "description": "Toolchain for the Roomify submission documents (PDF + DOCX). Run ../build.sh.",
+  "dependencies": {
+    "@mermaid-js/mermaid-cli": "11.4.2",
+    "pagedjs": "0.4.3",
+    "playwright": "1.63.0"
+  }
+}

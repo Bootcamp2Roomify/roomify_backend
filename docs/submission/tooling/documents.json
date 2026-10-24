@@ -1,0 +1,21 @@
+{
+  "release": "Release candidate v0.9.0-rc1",
+  "date": "24 October 2026",
+  "team": "Team Bootcamp2Roomify",
+  "documents": [
+    {"id": "report", "source": "REPORT.md", "title": "Technical Report", "file": "Roomify - Technical Report",
+     "subtitle": "Problem, approach, system design, models, results, limitations and future work"},
+    {"id": "evaluation", "source": "EVALUATION.md", "title": "Evaluation Evidence", "file": "Roomify - Evaluation Evidence",
+     "subtitle": "Detection quality and latency on held-out data, failure cases, behaviour without an AI key"},
+    {"id": "architecture", "source": "ARCHITECTURE.md", "title": "Architecture", "file": "Roomify - Architecture",
+     "subtitle": "Components, request flow, data model, security and deployment topology"},
+    {"id": "dependencies", "source": "DEPENDENCIES.md", "title": "Dependencies", "file": "Roomify - Dependencies",
+     "subtitle": "Pinned versions of every runtime, container image, package and external service"},
+    {"id": "repositories", "source": "REPOS.md", "title": "Repositories", "file": "Roomify - Repositories",
+     "subtitle": "Source code, visibility and licences"},
+    {"id": "deployment", "source": "DEPLOYMENT.md", "title": "Deployment", "file": "Roomify - Deployment",
+     "subtitle": "Proposed hosting, cost and steps (proposal only, not deployed)"}
+  ],
+  "pack": {"file": "Roomify - Submission Pack", "title": "Submission Pack",
+           "subtitle": "Technical report, evaluation evidence, architecture, dependencies, repositories and deployment"}
+}

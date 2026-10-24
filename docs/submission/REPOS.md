@@ -1,4 +1,4 @@
-# Repositories for judging
+# Repositories
 
 | Repo | Visibility now | Recommendation | README |
 |---|---|---|---|
