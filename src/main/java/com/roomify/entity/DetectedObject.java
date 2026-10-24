@@ -1,0 +1,186 @@
+package com.roomify.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+@Entity
+@Table(name = "detected_objects")
+public class DetectedObject {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "object_id")
+    private Long id;
+
+    @Column(name = "object_uuid", nullable = false, unique = true, updatable = false)
+    private UUID objectUuid;
+
+    @Column(name = "project_id", nullable = false)
+    private UUID projectId;
+
+    @Column(name = "image_id", nullable = false)
+    private Long imageId;
+
+    @Column(name = "object_class", nullable = false)
+    private String objectClass;
+
+    @Column(name = "confidence", precision = 6, scale = 5)
+    private BigDecimal confidence;
+
+    @Column(name = "x_min", precision = 8, scale = 6)
+    private BigDecimal xMin;
+
+    @Column(name = "y_min", precision = 8, scale = 6)
+    private BigDecimal yMin;
+
+    @Column(name = "x_max", precision = 8, scale = 6)
+    private BigDecimal xMax;
+
+    @Column(name = "y_max", precision = 8, scale = 6)
+    private BigDecimal yMax;
+
+    @Column(name = "model_version", nullable = false, length = 100)
+    private String modelVersion;
+
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
+    @Column(name = "source", nullable = false, length = 20)
+    private String source = "CV";
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    protected DetectedObject() {
+    }
+
+    /**
+     * An item the person added because detection missed it. User-confirmed items (MANUAL) carry
+     * confidence 1 so the redesign treats them as certain; they have no bounding box.
+     */
+    public static DetectedObject manual(UUID projectId, Long imageId, String label) {
+        DetectedObject object = new DetectedObject(projectId, imageId, label, BigDecimal.ONE,
+                null, null, null, null, "manual");
+        object.source = "MANUAL";
+        return object;
+    }
+
+    /** The person corrected the label, so the item becomes user-confirmed; its box is kept. */
+    public void relabel(String label) {
+        this.objectClass = label;
+        this.confidence = BigDecimal.ONE;
+        this.source = "MANUAL";
+        this.updatedAt = Instant.now();
+    }
+
+    public DetectedObject(
+            UUID projectId,
+            Long imageId,
+            String objectClass,
+            BigDecimal confidence,
+            BigDecimal xMin,
+            BigDecimal yMin,
+            BigDecimal xMax,
+            BigDecimal yMax,
+            String modelVersion
+    ) {
+        this.objectUuid = UUID.randomUUID();
+        this.projectId = projectId;
+        this.imageId = imageId;
+        this.objectClass = objectClass;
+        this.confidence = confidence;
+        this.xMin = xMin;
+        this.yMin = yMin;
+        this.xMax = xMax;
+        this.yMax = yMax;
+        this.modelVersion = modelVersion;
+        this.active = true;
+        this.source = "CV";
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
+    }
+
+    @PrePersist
+    void ensureUuid() {
+        if (objectUuid == null) {
+            objectUuid = UUID.randomUUID();
+        }
+
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+
+        if (updatedAt == null) {
+            updatedAt = createdAt;
+        }
+    }
+
+    public void deactivate() {
+        this.active = false;
+        this.updatedAt = Instant.now();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public UUID getObjectUuid() {
+        return objectUuid;
+    }
+
+    public UUID getProjectId() {
+        return projectId;
+    }
+
+    public Long getImageId() {
+        return imageId;
+    }
+
+    public String getObjectClass() {
+        return objectClass;
+    }
+
+    public BigDecimal getConfidence() {
+        return confidence;
+    }
+
+    public BigDecimal getXMin() {
+        return xMin;
+    }
+
+    public BigDecimal getYMin() {
+        return yMin;
+    }
+
+    public BigDecimal getXMax() {
+        return xMax;
+    }
+
+    public BigDecimal getYMax() {
+        return yMax;
+    }
+
+    public String getModelVersion() {
+        return modelVersion;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public String getSource() {
+        return source;
+    }
+}

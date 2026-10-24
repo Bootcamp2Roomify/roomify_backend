@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "1.0", "currency": "USD", "materials": ["Removable film"],
+  "tools": ["Measuring tape", "Craft knife"], "estimatedCost": 8.50,
+  "difficulty": "Easy", "estimatedTime": "30 minutes",
+  "steps": ["Measure the shelf.", "Wrap the shelf with removable film."],
+  "safetyNotes": ["Work on a stable surface; keep the cutting blade away from your body."]
+}

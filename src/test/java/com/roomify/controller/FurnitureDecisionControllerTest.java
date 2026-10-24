@@ -1,0 +1,173 @@
+package com.roomify.controller;
+
+import com.roomify.support.TestUserSecurity;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+class FurnitureDecisionControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    JdbcTemplate jdbc;
+
+    @Test
+    void createsAndUpdatesFurnitureDecision() throws Exception {
+        UUID projectId = createProject();
+        UUID objectId = createDetectedObject(projectId);
+
+        mockMvc.perform(patch(
+                        "/api/projects/{projectId}/objects/{objectId}",
+                        projectId,
+                        objectId
+                )
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"decision":"KEEP"}
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.objectId").value(objectId.toString()))
+                .andExpect(jsonPath("$.decision").value("KEEP"));
+
+        mockMvc.perform(patch(
+                        "/api/projects/{projectId}/objects/{objectId}",
+                        projectId,
+                        objectId
+                )
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"decision":"REPLACE"}
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.decision").value("REPLACE"));
+
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM furniture_decisions fd
+                JOIN detected_objects d ON d.object_id = fd.object_id
+                WHERE d.object_uuid = ?
+                """, Integer.class, objectId);
+
+        String decision = jdbc.queryForObject("""
+                SELECT fd.decision
+                FROM furniture_decisions fd
+                JOIN detected_objects d ON d.object_id = fd.object_id
+                WHERE d.object_uuid = ?
+                """, String.class, objectId);
+
+        assertThat(count).isEqualTo(1);
+        assertThat(decision).isEqualTo("REPLACE");
+    }
+
+    @Test
+    void returns404WhenObjectBelongsToAnotherProject() throws Exception {
+        UUID correctProjectId = createProject();
+        UUID wrongProjectId = createProject();
+        UUID objectId = createDetectedObject(correctProjectId);
+
+        mockMvc.perform(patch(
+                        "/api/projects/{projectId}/objects/{objectId}",
+                        wrongProjectId,
+                        objectId
+                )
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"decision":"KEEP"}
+                        """))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void returns400ForInvalidDecision() throws Exception {
+        UUID projectId = createProject();
+        UUID objectId = createDetectedObject(projectId);
+
+        mockMvc.perform(patch(
+                        "/api/projects/{projectId}/objects/{objectId}",
+                        projectId,
+                        objectId
+                )
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"decision":"SELL"}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message")
+                        .value("Decision must be one of the allowed values."))
+                .andExpect(jsonPath("$.allowedValues[0]").value("KEEP"))
+                .andExpect(jsonPath("$.allowedValues[1]").value("REPLACE"))
+                .andExpect(jsonPath("$.allowedValues[2]").value("REMOVE"))
+                .andExpect(jsonPath("$.allowedValues[3]").value("UNSURE"));
+    }
+
+    private UUID createProject() {
+        UUID projectId = UUID.randomUUID();
+
+        jdbc.update("""
+                INSERT INTO room_projects (
+                    project_id,
+                    user_id,
+                    status,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, 'IMAGE_UPLOADED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, projectId, TestUserSecurity.USER_ID);
+
+        return projectId;
+    }
+
+    private UUID createDetectedObject(UUID projectId) {
+        Long imageId = jdbc.queryForObject("""
+                INSERT INTO room_images (
+                    project_id,
+                    bucket,
+                    storage_key,
+                    original_filename,
+                    mime_type,
+                    file_size_bytes,
+                    created_at
+                )
+                VALUES (?, 'test-local', ?, 'room.jpg', 'image/jpeg', 1000, CURRENT_TIMESTAMP)
+                RETURNING image_id
+                """, Long.class, projectId, UUID.randomUUID().toString());
+
+        UUID objectUuid = UUID.randomUUID();
+
+        jdbc.update("""
+                INSERT INTO detected_objects (
+                    object_uuid,
+                    project_id,
+                    image_id,
+                    object_class,
+                    model_version,
+                    active,
+                    source,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, ?, 'chair', 'test-model', true, 'CV',
+                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, objectUuid, projectId, imageId);
+
+        return objectUuid;
+    }
+}

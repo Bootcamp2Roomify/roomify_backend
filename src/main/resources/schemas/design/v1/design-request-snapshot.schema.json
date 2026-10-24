@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://roomify.example/schemas/design/v1/design-request-snapshot.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestVersion",
+    "projectId",
+    "image",
+    "objects",
+    "preferences",
+    "budget"
+  ],
+  "properties": {
+    "requestVersion": {
+      "const": "1"
+    },
+    "projectId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "imageId",
+        "bucket",
+        "storageKey",
+        "contentType",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "imageId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bucket": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "\\S"
+        },
+        "storageKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "\\S"
+        },
+        "contentType": {
+          "enum": [
+            "image/png",
+            "image/jpeg"
+          ]
+        },
+        "width": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "objectId",
+          "label",
+          "confidence",
+          "bbox",
+          "decision"
+        ],
+        "properties": {
+          "objectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "\\S"
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "bbox": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y",
+                  "w",
+                  "h"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "w": {
+                    "type": "number"
+                  },
+                  "h": {
+                    "type": "number"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision": {
+            "enum": [
+              "KEEP",
+              "REPLACE",
+              "REMOVE",
+              "UNSURE"
+            ]
+          }
+        }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "style",
+        "preferredColors",
+        "roomPurpose",
+        "rentalFriendly",
+        "specialRequirements"
+      ],
+      "properties": {
+        "style": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "\\S"
+        },
+        "preferredColors": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "\\S"
+          }
+        },
+        "roomPurpose": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "\\S"
+        },
+        "rentalFriendly": {
+          "type": "boolean"
+        },
+        "specialRequirements": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 9999999999.99,
+          "multipleOf": 0.01,
+          "exclusiveMinimum": 0
+        },
+        "currency": {
+          "enum": [
+            "TWD",
+            "USD"
+          ]
+        }
+      }
+    }
+  }
+}

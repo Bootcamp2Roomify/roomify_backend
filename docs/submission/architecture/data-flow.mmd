@@ -1,0 +1,38 @@
+%% Roomify request flow. Rendered by docs/submission/build.sh.
+sequenceDiagram
+  participant U as Browser
+  participant F as Roomify<br/>frontend
+  participant B as Roomify<br/>API
+  participant C as Roomify<br/>CV service
+  participant L as OpenAI<br/>text
+  participant I as OpenAI<br/>image
+  participant D as Postgres<br/>and S3
+  U->>F: upload photo
+  F->>B: POST /image (Bearer)
+  B->>D: store photo
+  U->>F: analyze
+  F->>B: POST /analysis
+  B->>C: photo
+  C-->>B: labels, boxes
+  B->>D: detections
+  U->>F: decisions, edits, preferences
+  F->>B: PATCH / POST / PUT
+  U->>F: generate redesign
+  F->>B: POST /designs
+  B->>D: input snapshot
+  B->>L: rules + snapshot
+  L-->>B: plan JSON
+  B->>B: validate plan
+  B->>D: plan or error code
+  U->>F: see it in my room
+  F->>B: POST /prototype
+  B->>D: read original photo
+  B->>I: photo + plan prompt
+  I-->>B: concept image
+  B->>D: store concept
+  U->>F: suggestions, DIY
+  F->>B: POST /recommendations
+  B->>L: plan + budget + rules
+  L-->>B: items JSON
+  B->>B: totals, rental, safety checks
+  B->>D: suggestion set
