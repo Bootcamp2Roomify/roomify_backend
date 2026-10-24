@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "ai.image")
 public class ImageGenerationProperties {
 
-    private String model = "gpt-image-1";
+    private String model = "gpt-image-2.5-sunburst";
     private String size = "1024x1024";
     private String quality = "low";
 
