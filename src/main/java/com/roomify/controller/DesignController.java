@@ -14,8 +14,10 @@ public class DesignController {
     private final DesignService designs;
     private final DesignQueryService queries;
     private final GeneratedDesignImageService images;
-    public DesignController(DesignService designs,DesignQueryService queries,GeneratedDesignImageService images) {
-        this.designs=designs;this.queries=queries;this.images=images;
+    private final PrototypeService prototypes;
+    public DesignController(DesignService designs,DesignQueryService queries,GeneratedDesignImageService images,
+            PrototypeService prototypes) {
+        this.designs=designs;this.queries=queries;this.images=images;this.prototypes=prototypes;
     }
     @PostMapping public ResponseEntity<StoredDesignResponse> generate(@PathVariable UUID projectId) {
         return ResponseEntity.status(HttpStatus.CREATED).body(designs.generate(projectId));
@@ -31,6 +33,10 @@ public class DesignController {
     public StoredDesignResponse.GeneratedAsset upload(@PathVariable UUID projectId,@PathVariable Long designId,
             @RequestPart("file") MultipartFile file) throws IOException {
         return images.store(projectId,designId,file.getContentType(),file.getBytes());
+    }
+    @PostMapping("/{designId}/prototype")
+    public ResponseEntity<StoredDesignResponse.GeneratedAsset> prototype(@PathVariable UUID projectId,@PathVariable Long designId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(prototypes.generate(projectId,designId));
     }
     @GetMapping("/{designId}/image/content") public ResponseEntity<byte[]> content(@PathVariable UUID projectId,@PathVariable Long designId) {
         var image=images.content(projectId,designId);
