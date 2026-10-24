@@ -34,6 +34,7 @@ public class FurnitureDecisionService {
     ) {
         DetectedObject detectedObject = detectedObjectRepository
                 .findByObjectUuidAndProjectId(objectId, projectId)
+                .filter(DetectedObject::isActive)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Detected object was not found in this project."

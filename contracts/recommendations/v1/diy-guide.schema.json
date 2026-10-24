@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "diy-guide",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "currency": {
+      "type": "string",
+      "enum": [
+        "TWD",
+        "USD"
+      ]
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "tools": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "estimatedCost": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 9999999999.99,
+      "multipleOf": 0.01
+    },
+    "difficulty": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "estimatedTime": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "safetyNotes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "currency",
+    "materials",
+    "tools",
+    "estimatedCost",
+    "difficulty",
+    "estimatedTime",
+    "steps",
+    "safetyNotes"
+  ],
+  "additionalProperties": false
+}

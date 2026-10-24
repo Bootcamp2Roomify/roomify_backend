@@ -25,172 +25,51 @@ import java.util.UUID;
 
 @Service
 public class DesignService {
-    private static final Logger log =LoggerFactory.getLogger(DesignService.class);
-    private static final int MAX_GENERATION_ATTEMPTS = 2;
-
-    private final RoomProjectRepository roomProjectRepository;
-    private final FurnitureDecisionRepository furnitureDecisionRepository;
-    private final DesignResultRepository designResultRepository;
-    private final ProjectPreferencesService preferencesService;
-    private final DesignPromptFactory promptFactory;
-    private final DesignPlanValidator planValidator;
-    private final AiDesignProvider aiDesignProvider;
-    private final ObjectMapper objectMapper;
-
-    public DesignService(
-            RoomProjectRepository roomProjectRepository,
-            FurnitureDecisionRepository furnitureDecisionRepository,
-            DesignResultRepository designResultRepository,
-            ProjectPreferencesService preferencesService,
-            DesignPromptFactory promptFactory,
-            DesignPlanValidator planValidator,
-            AiDesignProvider aiDesignProvider,
-            ObjectMapper objectMapper
-    ) {
-        this.roomProjectRepository = roomProjectRepository;
-        this.furnitureDecisionRepository = furnitureDecisionRepository;
-        this.designResultRepository = designResultRepository;
-        this.preferencesService = preferencesService;
-        this.promptFactory = promptFactory;
-        this.planValidator = planValidator;
-        this.aiDesignProvider = aiDesignProvider;
-        this.objectMapper = objectMapper;
+    private final DesignPersistenceService persistence;
+    private final DesignQueryService queries;
+    private final AiDesignProvider provider;
+    private final AiProperties properties;
+    private final DesignPromptFactory prompts;
+    private final DesignPlanValidator validator;
+    private final ObjectMapper mapper;
+    public DesignService(DesignPersistenceService persistence,DesignQueryService queries,
+            AiDesignProvider provider,AiProperties properties,DesignPromptFactory prompts,
+            DesignPlanValidator validator,ObjectMapper mapper) {
+        this.persistence=persistence;this.queries=queries;this.provider=provider;this.properties=properties;
+        this.prompts=prompts;this.validator=validator;
+        this.mapper=mapper.copy().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+            .enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
+            .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT);
+        for(var type:new LogicalType[]{LogicalType.Integer,LogicalType.Float})
+            this.mapper.coercionConfigFor(type).setCoercion(CoercionInputShape.String,CoercionAction.Fail);
+        for(var shape:new CoercionInputShape[]{CoercionInputShape.Integer,CoercionInputShape.Float,CoercionInputShape.Boolean})
+            this.mapper.coercionConfigFor(LogicalType.Textual).setCoercion(shape,CoercionAction.Fail);
     }
-
-    @Transactional
-    public GenerateDesignResponse generate(UUID projectId) {
-        RoomProject project = roomProjectRepository.findById(projectId)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "Room project not found: " + projectId
-                ));
-
-        if (project.getStatus() != RoomProjectStatus.PREFERENCES_READY) {
-            throw new IllegalStateException(
-                    "Project must have saved preferences before generating a design."
-            );
-        }
-
-        if (designResultRepository.existsByProjectId(projectId)) {
-            throw new IllegalStateException(
-                    "A design has already been generated for this project."
-            );
-        }
-
-        ProjectPreferencesResponse preferences = preferencesService.find(projectId);
-
-        if (preferences == null) {
-            throw new IllegalStateException(
-                    "Project preferences are required before generating a design."
-            );
-        }
-
-        List<FurnitureDecision> furnitureDecisions =
-                furnitureDecisionRepository
-                        .findByDetectedObject_ProjectIdOrderByIdAsc(projectId);
-
-        if (furnitureDecisions.isEmpty()) {
-            throw new IllegalStateException(
-                    "Furniture decisions are required before generating a design."
-            );
-        }
-
-        DesignPlan plan = generateValidPlan(preferences, furnitureDecisions);
-
+    // No database transaction remains open while waiting for the external provider.
+    public StoredDesignResponse generate(UUID projectId) {
+        var started=persistence.begin(projectId,properties.getProvider(),provider.getModelName());
         try {
-            String planJson = objectMapper.writeValueAsString(plan);
-
-            DesignResult savedResult = designResultRepository.save(
-                    new DesignResult(
-                            projectId,
-                            planJson,
-                            plan.estimatedTotalCost(),
-                            plan.currency().toUpperCase(),
-                            aiDesignProvider.getModelName()
-                    )
-            );
-
-            project.setStatus(RoomProjectStatus.DESIGN_READY);
-            roomProjectRepository.save(project);
-
-            return toResponse(savedResult, plan);
-        } catch (JsonProcessingException exception) {
-            throw new IllegalStateException(
-                    "Unable to store the generated design plan.",
-                    exception
-            );
-        }
-    }
-
-private DesignPlan generateValidPlan(
-        ProjectPreferencesResponse preferences,
-        List<FurnitureDecision> furnitureDecisions
-) {
-    String retryInstruction = null;
-
-    for (int attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
-
-        String rawResponse = aiDesignProvider.generateJson(
-                promptFactory.systemPrompt(),
-                promptFactory.userPrompt(
-                        preferences,
-                        furnitureDecisions,
-                        retryInstruction
-                )
-        );
-
-        try {
-            DesignPlan plan = objectMapper.readValue(
-                    rawResponse,
-                    DesignPlan.class
-            );
-
-            planValidator.validate(
-                    plan,
-                    preferences,
-                    furnitureDecisions
-            );
-
-            return plan;
-
-        } catch (JsonProcessingException | IllegalArgumentException exception) {
-
-            // Log only error category and attempt number.
-            // Never log raw AI output or sensitive user data.
-            log.warn(
-                    "AI design validation failed: attempt={}, errorType={}",
-                    attempt,
-                    exception instanceof JsonProcessingException
-                            ? "JSON_PARSING_ERROR"
-                            : "PLAN_VALIDATION_ERROR"
-            );
-
-            // Provide feedback for one corrective retry.
-            if (attempt < MAX_GENERATION_ATTEMPTS) {
-                retryInstruction = exception instanceof JsonProcessingException
-                        ? "Previous response had invalid JSON or schema values. "
-                          + "Return a valid DesignPlan JSON object with correct fields and enum values."
-                        : exception.getMessage();
+            DesignPlan plan=null;
+            String retryReason=null;
+            for(int attempt=0;attempt<2;attempt++) {
+                String raw=provider.generateJson(prompts.systemPrompt(),prompts.userPrompt(started.snapshot(),retryReason));
+                try {
+                    if(raw==null || raw.length()>100000) throw new IllegalArgumentException("Output was empty or too large.");
+                    plan=mapper.readValue(raw,DesignPlan.class);validator.validate(plan,started.snapshot());break;
+                } catch(IllegalArgumentException invalid) {plan=null;retryReason=invalid.getMessage();
+                } catch(Exception unparseable) {plan=null;retryReason="Output was not valid JSON for the schema.";}
             }
+            if(plan==null) throw new DesignFailureException("INVALID_DESIGN_PLAN",started.designId());
+            persistence.succeed(started,plan);
+        } catch(RuntimeException error) {
+            String code=error instanceof DesignFailureException?"INVALID_DESIGN_PLAN"
+                :error instanceof AiProviderConfigurationException?"AI_CONFIGURATION_ERROR"
+                :error instanceof AiProviderRetryableException?"AI_PROVIDER_UNAVAILABLE"
+                :error instanceof InvalidStateException?"DESIGN_INPUT_CHANGED":"DESIGN_GENERATION_FAILED";
+            persistence.fail(started,code);
+            throw new DesignFailureException(code,started.designId());
         }
-    }
-
-    // Never expose raw validation details to the frontend.
-    throw new DesignGenerationException(
-            "Unable to generate a valid design plan."
-    );
-}
-    private GenerateDesignResponse toResponse(
-            DesignResult result,
-            DesignPlan plan
-    ) {
-        return new GenerateDesignResponse(
-                result.getId(),
-                result.getProjectId(),
-                plan,
-                result.getEstimatedTotalCost(),
-                result.getCurrency(),
-                result.getModelName(),
-                result.getCreatedAt()
-        );
+        return queries.get(projectId,started.designId());
     }
 }

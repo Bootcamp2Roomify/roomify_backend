@@ -1,5 +1,6 @@
 package com.roomify.controller;
 
+import com.roomify.support.TestUserSecurity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -92,16 +93,54 @@ class ProjectAnalysisControllerTest {
                 .value(objectUuid.toString()));
     }
 
+    @Test
+    void returnsProjectDecisionsAndDefaultsOnlyMissingChoices() throws Exception {
+        UUID project = createProject();
+        Long image = createRoomImage(project);
+        for (String decision : new String[]{"KEEP", "REPLACE", "REMOVE"}) {
+            UUID object = createDetectedObject(project, image, decision.toLowerCase(), true);
+            saveDecision(object, decision);
+        }
+        createDetectedObject(project, image, "missing choice", true);
+        UUID inactive = createDetectedObject(project, image, "inactive", false);
+        saveDecision(inactive, "REMOVE");
+        UUID otherProject = createProject();
+        UUID other = createDetectedObject(otherProject, createRoomImage(otherProject), "other", true);
+        saveDecision(other, "REMOVE");
+
+        mockMvc.perform(get("/api/projects/{projectId}/analysis", project))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.objects.length()").value(4))
+            .andExpect(jsonPath("$.objects[0].decision").value("KEEP"))
+            .andExpect(jsonPath("$.objects[1].decision").value("REPLACE"))
+            .andExpect(jsonPath("$.objects[2].decision").value("REMOVE"))
+            .andExpect(jsonPath("$.objects[3].decision").value("UNSURE"));
+        mockMvc.perform(get("/api/projects/{projectId}/analysis", otherProject))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.objects.length()").value(1))
+            .andExpect(jsonPath("$.objects[0].objectId").value(other.toString()))
+            .andExpect(jsonPath("$.objects[0].decision").value("REMOVE"));
+    }
+
+    private void saveDecision(UUID object, String decision) {
+        jdbc.update("""
+            INSERT INTO furniture_decisions(object_id, decision)
+            SELECT object_id, ? FROM detected_objects WHERE object_uuid = ?
+            """, decision, object);
+    }
+
     private UUID createProject() {
         return jdbc.queryForObject("""
             INSERT INTO room_projects (
-                project_id
+                project_id,
+                user_id
             )
-            VALUES (?)
+            VALUES (?, ?)
             RETURNING project_id
             """,
             UUID.class,
-            UUID.randomUUID()
+            UUID.randomUUID(),
+            TestUserSecurity.USER_ID
         );
     }
 

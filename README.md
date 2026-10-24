@@ -1,366 +1,96 @@
 # Roomify Backend
 
-Backend service for **Roomify**, an AI-powered room redesign and DIY planning application that helps students, renters, young adults, and budget-conscious users create personalized room designs based on their actual space, existing furniture, preferred style, budget, and practical requirements.
+Spring Boot API for **Roomify**, which turns one photo of your own room into a budget-aware,
+rental-aware redesign: detected furniture you can keep, replace or remove, an AI redesign plan,
+a visual concept of the same room, shopping suggestions with cheaper alternatives, and beginner
+DIY guides. *Redesign more, buy less.*
 
----
+> **Release status: v0.9.0-rc1 — AI features unverified.** Accounts, projects, upload, detection,
+> review and preferences are tested end to end against the real stack. Plan, visual concept,
+> suggestion and DIY generation are implemented and tested with fake providers and with no key (clear
+> `503 AI_CONFIGURATION_ERROR`), but have **not yet been run against the live OpenAI API**, including
+> the new default image model `gpt-image-2.5-sunburst`.
 
-## Features
+Related services: [roomify_frontend](https://github.com/Bootcamp2Roomify/roomify_frontend) (Next.js) ·
+[roomify_cv](https://github.com/Bootcamp2Roomify/roomify_cv) (FastAPI + YOLO11).
+Architecture and the hackathon submission package live in [`docs/submission/`](docs/submission/).
 
-- 🔐 User Authentication and Authorization
-- 👤 User Profile Management
-- 🏠 Room Project Management
-- 🖼️ Room Image Upload and Storage
-- 🪑 Detected Furniture Management
-- ✅ Keep, Replace, Remove, or Unsure Decisions
-- 🎨 Style, Color, Budget, and Requirement Management
-- 🤖 AI Redesign Generation
-- 👁️ Computer Vision Service Integration
-- 🛋️ Furniture and Decoration Recommendations
-- 🛠️ Beginner-Friendly DIY Suggestions
-- 💰 Estimated Project Cost
-- 💾 Saved Projects and Dashboard Data
+## What it does
 
----
-
-## Tech Stack
-
-| Layer | Technology |
+| MVP feature | Endpoints |
 |---|---|
-| Framework | Spring Boot |
-| Language | Java |
-| API | REST API |
-| Database | PostgreSQL |
-| Computer Vision | Python and FastAPI service |
-| AI Services | OpenAI and Gemini |
-| Authentication | JWT |
-| Image Storage | AWS S3 or compatible cloud object storage |
-| Secret Management | AWS Secrets Manager |
-| Deployment | To be determined |
+| Accounts and private projects | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
+| Project setup, dashboard | `POST /api/projects`, `GET /api/projects`, `GET /api/projects/{id}` |
+| Photo upload | `POST /api/projects/{id}/image`, `GET …/image`, `GET …/image/content` |
+| Furniture detection (via CV service) | `POST /api/projects/{id}/analysis`, `GET …/analysis` |
+| Keep / Replace / Remove / Unsure, manual corrections | `PATCH …/objects/{objectId}`, `POST …/objects`, `PUT …/objects/{objectId}/label`, `DELETE …/objects/{objectId}` |
+| Style, budget, rental mode, requirements | `GET/PUT …/preferences`, `GET …/preferences/limits` |
+| Redesign plan (LLM) | `POST …/designs`, `GET …/designs/latest`, `GET …/designs/{designId}` |
+| Visual concept (image model) | `POST …/designs/{designId}/prototype`, `GET …/designs/{designId}/image/content` |
+| Shopping suggestions and DIY guides | `POST/GET …/recommendations`, `POST/GET …/recommendations/{itemId}/diy` |
 
----
+Every `/api/projects/{id}/**` route requires `Authorization: Bearer <token>` and the caller must own
+the project; anything else returns `404 PROJECT_NOT_FOUND`. Generated plans and suggestions are
+validated server-side (budget totals, furniture decisions, rental restrictions, DIY safety) before they
+are stored; invalid model output is retried once and otherwise rejected.
 
-## System Architecture
+Contracts: [`docs/api-contract.md`](docs/api-contract.md), [`docs/design/API.md`](docs/design/API.md),
+[`contracts/recommendations/`](contracts/recommendations/README.md).
 
-Roomify uses separate repositories for the frontend, backend, and computer-vision service.
+## Stack
 
-```text
-Next.js Frontend
-        |
-        v
-Spring Boot REST API
-        |
-        +--------------------+
-        |                    |
-        v                    v
-PostgreSQL          Python FastAPI CV Service
-        |
-        v
-Cloud Object Storage / AWS S3
-```
+Java 21 · Spring Boot 3.5.0 (Web, Validation, Data JPA, Security / OAuth2 resource server) ·
+PostgreSQL 17 + Flyway · OpenAI (`gpt-4o-mini` text, `gpt-image-2.5-sunburst` image edits) · AWS S3 or local
+disk for images. Exact versions: [`docs/submission/DEPENDENCIES.md`](docs/submission/DEPENDENCIES.md).
 
-The Spring Boot backend acts as the main API layer. It manages authentication, users, room projects, furniture decisions, design preferences, budgets, recommendations, and saved redesign results.
+## Run locally
 
-The computer-vision service analyzes uploaded room images and returns detected furniture information to the backend.
-
-Room images and generated redesign images should be stored in cloud object storage rather than directly inside PostgreSQL.
-
----
-
-## Planned Project Structure
-
-The backend source code will follow a layered Spring Boot structure:
-
-```text
-src/
-├── main/
-│   ├── java/
-│   │   └── com/roomify/
-│   │       ├── config/
-│   │       ├── controller/
-│   │       ├── dto/
-│   │       ├── entity/
-│   │       ├── exception/
-│   │       ├── repository/
-│   │       ├── security/
-│   │       ├── service/
-│   │       └── RoomifyApplication.java
-│   └── resources/
-│       ├── application.properties
-│       └── application.yml
-└── test/
-    └── java/
-```
-
-The exact structure may be updated when the Spring Boot application is initialized.
-
----
-
-## MVP User Workflow
-
-```text
-Create an Account
-        ↓
-Create a Room Project
-        ↓
-Upload a Room Image
-        ↓
-Analyze the Room
-        ↓
-Review Detected Furniture
-        ↓
-Keep / Replace / Remove / Unsure
-        ↓
-Enter Style, Budget, and Requirements
-        ↓
-Generate a Redesign
-        ↓
-Review Furniture and DIY Suggestions
-        ↓
-Save the Project
-```
-
----
-
-## Development Setup
-
-The Spring Boot application will be initialized in Jira task `ROOM-8`.
-
-### Clone the Repository
+Prerequisites: Java 21, Docker. The CV service should be running on `http://localhost:8000`
+(see roomify_cv) for photo analysis.
 
 ```bash
-git clone https://github.com/Bootcamp2Roomify/roomify_backend.git
-cd roomify_backend
+cp .env.example .env          # then edit: DB_PASSWORD, JWT_SECRET (>= 32 bytes), OPENAI_API_KEY
+docker compose up -d db       # Postgres 17.11 on 127.0.0.1:5433
+DB_PORT=5433 ./mvnw spring-boot:run
+curl localhost:8080/api/health
 ```
 
-### Configure the Environment
+Or everything in containers: `docker compose up --build` (backend on `127.0.0.1:8080`).
 
-Create a local environment file from the provided example:
+`.env` is git-ignored and loaded automatically; never commit real values. Without `OPENAI_API_KEY`,
+everything works except generation, which returns `503 AI_CONFIGURATION_ERROR`.
+
+### Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PORT` | `8080` | HTTP port |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | `localhost`, `5432`, `roomify`, –, – | PostgreSQL |
+| `JWT_SECRET` | – (required) | HS256 signing secret, at least 32 bytes |
+| `JWT_TTL` | `1h` | Access-token lifetime |
+| `OPENAI_API_KEY` | – | OpenAI key for plans, suggestions and images (`AI_API_KEY` overrides it for text) |
+| `AI_MODEL` | `gpt-4o-mini` | Text model |
+| `AI_IMAGE_MODEL`, `AI_IMAGE_SIZE`, `AI_IMAGE_QUALITY` | `gpt-image-2.5-sunburst`, `1024x1024`, `low` | Visual concept (gpt-image-1 was retired 2026-10-23) |
+| `AI_READ_TIMEOUT`, `AI_MAX_OUTPUT_TOKENS`, `AI_MAX_RETRIES` | `180s`, `4000`, `1` | Provider limits |
+| `AI_TEMPERATURE`, `AI_REASONING_EFFORT` | `0.1`, empty | Leave temperature empty and set effort (e.g. `low`) for reasoning models such as `gpt-6-luna` |
+| `CV_SERVICE_URL` (or `VISION_SERVICE_BASE_URL`) | `http://localhost:8000` | CV service |
+| `STORAGE_TYPE` | `local` | `local` or `s3` |
+| `STORAGE_LOCAL_ROOT` | `./storage` | Image folder when `local` |
+| `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | – | Image bucket when `s3` (prefer an IAM role over keys) |
+| `ROOM_IMAGE_MAX_SIZE_BYTES`, `DESIGN_IMAGE_MAX_SIZE_BYTES` | `10485760` | Upload limits |
+| `PREFERENCES_MAX_BUDGET_AMOUNT` | `1000000` | Highest accepted budget |
+
+## Test
+
+Tests need a PostgreSQL database (they run Flyway migrations):
 
 ```bash
-cp .env.example .env
+docker compose up -d db
+DB_PORT=5433 DB_PASSWORD=<from .env> JWT_SECRET=<from .env> ./mvnw verify
 ```
 
-Replace the placeholder values with local development credentials.
+CI (`.github/workflows/ci.yml`) runs the same suite against `postgres:17.11` and builds the image.
 
-Never commit the completed `.env` file.
+## Contributing
 
-### Required Environment Variables
-
-| Variable | Purpose |
-|---|---|
-| `SERVER_PORT` | Port used by the Spring Boot backend |
-| `DATABASE_URL` | PostgreSQL connection URL |
-| `DATABASE_USERNAME` | PostgreSQL username |
-| `DATABASE_PASSWORD` | PostgreSQL password |
-| `JWT_SECRET` | Secret used to sign authentication tokens |
-| `OPENAI_API_KEY` | OpenAI API credential |
-| `GEMINI_API_KEY` | Gemini API credential |
-| `CV_SERVICE_URL` | URL of the Python computer-vision service |
-| `AWS_REGION` | AWS deployment region |
-| `AWS_ACCESS_KEY_ID` | AWS access credential |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret credential |
-| `AWS_S3_BUCKET` | S3 bucket used for image storage |
-
-The repository only contains placeholder values in `.env.example`. Real credentials must be stored securely and should use AWS Secrets Manager in deployed environments.
-
-### Build and Run
-
-Build and startup commands will be added after the Spring Boot project and its build system are initialized.
-
-The planned local backend URL is:
-
-```text
-http://localhost:8080
-```
-
-Spring Boot API documentation will be documented after the API and Swagger/OpenAPI configuration are implemented.
-
----
-
-## Security and Sensitive Data
-
-The following information must never be committed to GitHub:
-
-- Completed `.env` files
-- Database credentials
-- JWT secrets
-- OpenAI or Gemini API keys
-- AWS access keys
-- Cloud-storage credentials
-- Private keys or certificates
-- Personal user data
-- Uploaded room images
-
-Production secrets should be stored securely using AWS Secrets Manager.
-
-The `.gitignore` file excludes environment files, secrets, build output, logs, temporary files, uploaded images, generated images, local databases, and IDE configuration files.
-
----
-
-## Git Workflow
-
-Roomify follows a feature-branch and Pull Request workflow:
-
-```text
-main
-│
-└── develop
-      ├── feature/*
-      ├── fix/*
-      └── docs/*
-```
-
-- **`main`** — stable and production-ready code
-- **`develop`** — integration branch for reviewed development work
-- **`feature/*`** — new features
-- **`fix/*`** — bug fixes
-- **`docs/*`** — documentation changes
-
-Team members should not push development work directly into `main` or `develop`.
-
-Each change should be completed on a separate branch and submitted to `develop` through a Pull Request.
-
----
-## Local Development with Docker — ROOM-9
-
-### Requirements
-
-Docker Desktop with Docker Compose running.
-Java and PostgreSQL run inside containers.
-
-### Configuration
-
-Create `.env` in the repository root:
-
-```dotenv
-DB_PASSWORD=replace_with_your_own_local_password
-```
-
-Set your own password. Never commit `.env`.
-
-Compose supplies `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`,
-and `DB_PASSWORD` to Spring Boot. Spring Boot does not automatically
-load the `.env` file itself.
-
-### Start
-
-```bash
-docker compose up --build -d
-curl -i http://localhost:8080/api/health
-```
-
-The backend is available on port 8080. PostgreSQL is accessible
-within the Compose network.
-
-Flyway applies migrations from `src/main/resources/db/migration`.
-Do not edit migrations after they have been applied; add a new
-versioned migration for subsequent schema changes.
-
-### Verify Persistence
-
-```bash
-docker compose --profile test run --rm test
-```
-
-The integration test saves a RoomProject, clears the persistence
-context, retrieves it for its owner, and checks that another owner
-cannot retrieve it through the owner-filtered repository method.
-
-Test records are rolled back. This uses the local development
-database and must not target a production database.
-
-### Logs and Shutdown
-
-```bash
-docker compose logs --tail=100 backend
-docker compose down
-```
-
-Database data persists in the named volume after shutdown.
-`docker compose down -v` deletes that data.
-
-The Dockerfile skips tests during image creation; run the test
-command separately before submitting changes.
-
-## Commit Convention
-
-Roomify uses Conventional Commits:
-
-```text
-feat:
-fix:
-docs:
-refactor:
-test:
-chore:
-```
-
-Examples:
-
-```text
-feat(auth): add user registration endpoint
-fix(project): validate empty room project name
-docs: update backend setup instructions
-test(auth): add authentication service tests
-chore: configure environment example
-```
-
----
-
-## Pull Request Convention
-
-Pull Request titles must include the related Jira issue key:
-
-```text
-[ROOM-###] <type>: Brief description
-```
-
-Example:
-
-```text
-[ROOM-7] docs: Set up backend repository and Git workflow
-```
-
-Every Pull Request should:
-
-- Target the `develop` branch
-- Include a clear description and summary
-- Reference the related Jira issue
-- Include testing information when applicable
-- Be reviewed by at least one team member
-- Resolve review comments and merge conflicts before merging
-- Contain no passwords, API keys, or other secrets
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the complete contribution guidelines.
-
----
-
-## MVP Technical Limitations
-
-The Roomify MVP:
-
-- Does not claim centimeter-perfect room measurements from a single photograph
-- Cannot guarantee that recommended furniture will physically fit
-- Does not create a complete interactive 3D room model
-- Does not support augmented-reality furniture placement
-- Does not provide drag-and-drop furniture placement
-- Generates a static redesign concept rather than multiple interactive variations
-- Does not guarantee real-time product prices or inventory
-- Does not automatically purchase recommended products
-- Only provides beginner-friendly, low-risk DIY suggestions
-- Does not replace a professional interior designer, contractor, or safety inspection
-
-Users should verify room and furniture measurements before purchasing products or making physical changes.
-
----
-
-## Related Repositories
-
-- [Roomify Frontend](https://github.com/Bootcamp2Roomify/roomify_frontend) — Next.js, React, TypeScript, and Tailwind CSS
-- `roomify_cv` — Python and FastAPI computer-vision service; repository will be added during project setup
-
----
-
-## License
-
-This project is licensed under the MIT License.
+Branching, commit and PR conventions: [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under [LICENSE](LICENSE).

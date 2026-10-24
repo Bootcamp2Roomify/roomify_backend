@@ -1,6 +1,10 @@
 package com.roomify.service;
 
 import com.roomify.client.VisionServiceClient;
+import com.roomify.dto.CreateProjectRequest;
+import com.roomify.dto.ProjectListResponse;
+import com.roomify.dto.ProjectSummaryResponse;
+import com.roomify.repository.ProjectSummaryRepository;
 import com.roomify.dto.analysis.AnalyzeProjectResponse;
 import com.roomify.dto.analysis.BoundingBoxResponse;
 import com.roomify.dto.analysis.DetectedObjectResponse;
@@ -30,24 +34,40 @@ public class RoomProjectService {
     private final DetectedObjectRepository detectedObjectRepository;
     private final VisionServiceClient visionServiceClient;
     private final DetectionPersistenceService detectionPersistenceService;
+    private final ProjectSummaryRepository summaries;
 
     public RoomProjectService(
             RoomProjectRepository repository,
             RoomImageRepository roomImageRepository,
             DetectedObjectRepository detectedObjectRepository,
             VisionServiceClient visionServiceClient,
-            DetectionPersistenceService detectionPersistenceService
+            DetectionPersistenceService detectionPersistenceService,
+            ProjectSummaryRepository summaries
     ) {
         this.repository = repository;
         this.roomImageRepository = roomImageRepository;
         this.detectedObjectRepository = detectedObjectRepository;
         this.visionServiceClient = visionServiceClient;
         this.detectionPersistenceService = detectionPersistenceService;
+        this.summaries = summaries;
+    }
+
+    public static final int MAX_PAGE_SIZE = 50;
+
+    @Transactional(readOnly = true)
+    public ProjectListResponse listProjects(long userId, int page, int pageSize) {
+        if (page < 1 || pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
+            throw new IllegalArgumentException("page must be at least 1 and pageSize between 1 and " + MAX_PAGE_SIZE + ".");
+        }
+        List<ProjectSummaryResponse> rows = summaries.findForUser(userId, pageSize + 1, (page - 1) * pageSize);
+        boolean hasNext = rows.size() > pageSize;
+        return new ProjectListResponse(hasNext ? rows.subList(0, pageSize) : rows, page, pageSize, hasNext);
     }
 
     @Transactional
-    public RoomProject createProject() {
-        return repository.save(new RoomProject());
+    public RoomProject createProject(long userId, CreateProjectRequest request) {
+        return repository.save(new RoomProject(userId, request.name().trim(), request.roomType(),
+                request.rentalStatus()));
     }
 
     @Transactional(readOnly = true)
@@ -60,6 +80,9 @@ public class RoomProjectService {
 
     @Transactional
     public RoomProject transitionTo(UUID id, RoomProjectStatus nextStatus) {
+        if (nextStatus == RoomProjectStatus.DESIGN_READY) {
+            throw new InvalidStateException("Only a validated saved design can mark a project ready.");
+        }
         RoomProject project = getProject(id);
         RoomProjectStatus currentStatus = project.getStatus();
 
@@ -86,7 +109,8 @@ public class RoomProjectService {
 
     @Transactional(noRollbackFor = VisionServiceException.class)
     public AnalyzeProjectResponse analyzeProject(UUID id) {
-        RoomProject project = getProject(id);
+        RoomProject project = repository.findByIdForUpdate(id)
+                .orElseThrow(() -> new NoSuchElementException("Room project not found: " + id));
 
         RoomImage activeImage = roomImageRepository
                 .findTopByProjectIdOrderByCreatedAtDesc(id)

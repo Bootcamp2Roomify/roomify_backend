@@ -31,6 +31,13 @@ No approval, implementation, or completion of Jira workflow is implied.
 
 ### Authentication and Ownership
 
+> **Implemented (ROOM auth PR):** `POST /api/auth/register` (201, returns `{id,email,displayName}`, no token),
+> `POST /api/auth/login` (200, `{accessToken,tokenType:"Bearer",expiresIn,user}`), `GET /api/auth/me`.
+> HS256 JWT signed with `JWT_SECRET`, lifetime `JWT_TTL` (default 1h), BCrypt password hashes.
+> Every `/api/projects/{projectId}/**` route checks ownership; another user's project returns
+> `404 PROJECT_NOT_FOUND`, a missing or invalid token returns `401 UNAUTHENTICATED`.
+> Project routes ship under `/api/projects`, not the `/api/rooms` paths drafted below.
+
 - Registration and login do not require a login token.
 - All room-project endpoints require a valid JWT access token.
 - Send the token using: `Authorization: Bearer <accessToken>`.

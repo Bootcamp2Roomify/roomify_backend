@@ -73,7 +73,7 @@ public class ProjectPreferencesService {
             jdbc.update("""
                 UPDATE room_projects
                 SET status = 'PREFERENCES_READY', updated_at = CURRENT_TIMESTAMP
-                WHERE project_id = ? AND status = 'ANALYZED'
+                WHERE project_id = ? AND status IN ('ANALYZED','DESIGN_READY')
                 """, projectId);
             return find(projectId);
     }
