@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface DesignResultRepository extends JpaRepository<DesignResult, Long> {
 
-    Optional<DesignResult> findByProjectId(UUID projectId);
+    Optional<DesignResult> findFirstByProjectIdOrderByCreatedAtDescIdDesc(UUID projectId);
 
     boolean existsByProjectId(UUID projectId);
 }

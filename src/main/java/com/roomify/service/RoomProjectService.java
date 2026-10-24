@@ -60,6 +60,9 @@ public class RoomProjectService {
 
     @Transactional
     public RoomProject transitionTo(UUID id, RoomProjectStatus nextStatus) {
+        if (nextStatus == RoomProjectStatus.DESIGN_READY) {
+            throw new InvalidStateException("Only a validated saved design can mark a project ready.");
+        }
         RoomProject project = getProject(id);
         RoomProjectStatus currentStatus = project.getStatus();
 

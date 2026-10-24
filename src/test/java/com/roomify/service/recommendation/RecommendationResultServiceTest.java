@@ -34,8 +34,8 @@ class RecommendationResultServiceTest {
 
     Long design(UUID project) {
         return jdbc.queryForObject("""
-            INSERT INTO design_results(project_id, plan_json, estimated_total_cost, currency, model_name)
-            VALUES (?, '{}'::jsonb, 50, 'USD', 'fixture') RETURNING design_id
+            INSERT INTO design_results(project_id, plan_json, estimated_total_cost, currency, model_name, completed_at)
+            VALUES (?, '{}'::jsonb, 50, 'USD', 'fixture', CURRENT_TIMESTAMP) RETURNING design_id
             """, Long.class, project);
     }
 
@@ -64,6 +64,13 @@ class RecommendationResultServiceTest {
         jdbc.update("DELETE FROM project_preferences WHERE project_id = ?", other);
         assertThatThrownBy(() -> service.storeSet(other, design, payload, metadata)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> service.latest(first)).isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test void rejectsDesignThatHasNotSucceeded() throws Exception {
+        UUID project = project(); Long design = design(project);
+        jdbc.update("UPDATE design_results SET status = 'FAILED', plan_json = NULL, error_code = 'INVALID_DESIGN_PLAN' WHERE design_id = ?", design);
+        var payload = codec.readSet(fixture("recommendation-set"));
+        assertThatThrownBy(() -> service.storeSet(project, design, payload, metadata)).isInstanceOf(NoSuchElementException.class);
     }
 
     @Test void rejectsWrongCurrencyAndExcessBudgetWithoutLosingPreviousSet() throws Exception {

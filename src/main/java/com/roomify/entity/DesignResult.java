@@ -22,16 +22,15 @@ public class DesignResult {
     @Column(name = "design_id", nullable = false, updatable = false)
     private Long id;
 
-    @Column(name = "project_id", nullable = false, unique = true, updatable = false)
+    @Column(name = "project_id", nullable = false, updatable = false)
     private UUID projectId;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "plan_json", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "plan_json", columnDefinition = "jsonb")
     private String planJson;
 
     @Column(
             name = "estimated_total_cost",
-            nullable = false,
             precision = 12,
             scale = 2
     )
@@ -45,6 +44,10 @@ public class DesignResult {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    // Lifecycle is owned by DesignPersistenceService via JDBC; JPA only reads it.
+    @Column(name = "status", insertable = false, updatable = false)
+    private String status;
 
     protected DesignResult() {
     }
@@ -62,6 +65,10 @@ public class DesignResult {
         this.currency = currency;
         this.modelName = modelName;
         this.createdAt = Instant.now();
+    }
+
+    public boolean isSucceeded() {
+        return "SUCCEEDED".equals(status);
     }
 
     public Long getId() {

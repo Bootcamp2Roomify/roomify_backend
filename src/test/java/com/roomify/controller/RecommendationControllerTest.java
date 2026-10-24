@@ -35,7 +35,7 @@ class RecommendationControllerTest {
         return id;
     }
     Long design(UUID id) {
-        return jdbc.queryForObject("INSERT INTO design_results(project_id, plan_json, estimated_total_cost, currency, model_name) VALUES (?, '{}'::jsonb, 50, 'USD', 'fixture') RETURNING design_id", Long.class, id);
+        return jdbc.queryForObject("INSERT INTO design_results(project_id, plan_json, estimated_total_cost, currency, model_name, completed_at) VALUES (?, '{}'::jsonb, 50, 'USD', 'fixture', CURRENT_TIMESTAMP) RETURNING design_id", Long.class, id);
     }
     String fixture(String name) throws Exception {
         return Files.readString(Path.of("contracts/recommendations/v1/examples/" + name + ".json"));

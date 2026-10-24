@@ -30,7 +30,7 @@ public class RecommendationResultService {
     public StoredRecommendationSet storeSet(UUID projectId, Long designResultId, RecommendationSet payload, GenerationMetadata metadata) {
         codec.validate(payload); codec.validate(metadata); requireProject(projectId);
         if (designResultId == null) throw missing();
-        var design = designs.findById(designResultId).filter(value -> value.getProjectId().equals(projectId)).orElseThrow(this::missing);
+        var design = designs.findById(designResultId).filter(value -> value.getProjectId().equals(projectId) && value.isSucceeded()).orElseThrow(this::missing);
         var savedPreferences = preferences.find(projectId);
         if (savedPreferences == null || !savedPreferences.currency().equals(payload.currency())
                 || !design.getCurrency().equals(payload.currency())

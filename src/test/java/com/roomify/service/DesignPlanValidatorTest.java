@@ -1,12 +1,11 @@
 package com.roomify.service;
 
-import com.roomify.dto.ProjectPreferencesResponse;
 import com.roomify.dto.design.BudgetAllocation;
 import com.roomify.dto.design.DesignPlan;
+import com.roomify.dto.design.DesignRequestSnapshot;
 import com.roomify.dto.design.LayoutChange;
-import com.roomify.entity.DetectedObject;
-import com.roomify.entity.FurnitureDecision;
 import com.roomify.entity.FurnitureDecisionType;
+import jakarta.validation.Validation;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -19,235 +18,150 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DesignPlanValidatorTest {
 
-    private final DesignPlanValidator validator = new DesignPlanValidator();
+    private final DesignPlanValidator validator =
+            new DesignPlanValidator(Validation.buildDefaultValidatorFactory().getValidator());
 
     @Test
     void acceptsValidRentalFriendlyPlanThatKeepsObject() {
-        FurnitureDecision furnitureDecision = furnitureDecision(
-                FurnitureDecisionType.KEEP,
-                new BigDecimal("0.95")
-        );
+        DesignRequestSnapshot.Furniture bed = bed(FurnitureDecisionType.KEEP, new BigDecimal("0.95"));
 
         DesignPlan plan = plan(
-                new LayoutChange(
-                        furnitureDecision.getDetectedObject().getObjectUuid(),
-                        "bed",
-                        FurnitureDecisionType.KEEP,
+                action(bed, LayoutChange.Type.KEEP,
                         "Keep the bed in its current position.",
-                        "Keeping the bed avoids unnecessary replacement costs."
-                ),
-                List.of(
-                        new BudgetAllocation(
-                                "Lighting",
-                                "Plug-in floor lamp",
-                                "Adds removable task lighting.",
-                                new BigDecimal("45.00")
-                        )
-                ),
+                        "Keeping the bed avoids unnecessary replacement costs."),
+                List.of(new BudgetAllocation("Lighting", "Plug-in floor lamp",
+                        "Adds removable task lighting.", new BigDecimal("45.00"))),
                 true
         );
 
-        assertDoesNotThrow(() -> validator.validate(
-                plan,
-                preferences(true),
-                List.of(furnitureDecision)
-        ));
+        assertDoesNotThrow(() -> validator.validate(plan, snapshot(bed, true)));
     }
 
     @Test
     void rejectsPlanThatRemovesKeepObject() {
-        FurnitureDecision furnitureDecision = furnitureDecision(
-                FurnitureDecisionType.KEEP,
-                new BigDecimal("0.95")
-        );
+        DesignRequestSnapshot.Furniture bed = bed(FurnitureDecisionType.KEEP, new BigDecimal("0.95"));
 
         DesignPlan plan = plan(
-                new LayoutChange(
-                        furnitureDecision.getDetectedObject().getObjectUuid(),
-                        "bed",
-                        FurnitureDecisionType.KEEP,
+                action(bed, LayoutChange.Type.KEEP,
                         "Remove the bed to create more floor space.",
-                        "A larger open area may feel more spacious."
-                ),
+                        "A larger open area may feel more spacious."),
                 standardAllocation(),
                 false
         );
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> validator.validate(
-                        plan,
-                        preferences(false),
-                        List.of(furnitureDecision)
-                )
-        );
-
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> validator.validate(plan, snapshot(bed, false)));
         assertTrue(exception.getMessage().contains("KEEP"));
     }
 
     @Test
     void rejectsPlanThatRetainsRemoveObject() {
-        FurnitureDecision furnitureDecision = furnitureDecision(
-                FurnitureDecisionType.REMOVE,
-                new BigDecimal("0.95")
-        );
+        DesignRequestSnapshot.Furniture bed = bed(FurnitureDecisionType.REMOVE, new BigDecimal("0.95"));
 
         DesignPlan plan = plan(
-                new LayoutChange(
-                        furnitureDecision.getDetectedObject().getObjectUuid(),
-                        "bed",
-                        FurnitureDecisionType.REMOVE,
-                        "Keep and style the bed with new pillows.",
-                        "The bed can become a focal point."
-                ),
+                action(bed, LayoutChange.Type.REMOVE,
+                        "Remove the bed but keep the frame as a styled daybed.",
+                        "This creates a lounge corner."),
                 standardAllocation(),
                 false
         );
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> validator.validate(
-                        plan,
-                        preferences(false),
-                        List.of(furnitureDecision)
-                )
-        );
-
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> validator.validate(plan, snapshot(bed, false)));
         assertTrue(exception.getMessage().contains("REMOVE"));
     }
 
     @Test
     void rejectsPermanentModificationForRentalFriendlyPlan() {
-        FurnitureDecision furnitureDecision = furnitureDecision(
-                FurnitureDecisionType.KEEP,
-                new BigDecimal("0.95")
-        );
+        DesignRequestSnapshot.Furniture bed = bed(FurnitureDecisionType.KEEP, new BigDecimal("0.95"));
 
         DesignPlan plan = plan(
-                new LayoutChange(
-                        furnitureDecision.getDetectedObject().getObjectUuid(),
-                        "bed",
-                        FurnitureDecisionType.KEEP,
-                        "Keep the bed in its current position.",
-                        "This keeps the layout functional."
-                ),
-                List.of(
-                        new BudgetAllocation(
-                                "Walls",
-                                "Interior paint",
-                                "Repaint the walls in a neutral color.",
-                                new BigDecimal("80.00")
-                        )
-                ),
+                action(bed, LayoutChange.Type.KEEP,
+                        "Keep the bed and repaint the wall behind it.",
+                        "A painted accent wall adds color."),
+                standardAllocation(),
                 true
         );
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> validator.validate(
-                        plan,
-                        preferences(true),
-                        List.of(furnitureDecision)
-                )
-        );
-
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> validator.validate(plan, snapshot(bed, true)));
         assertTrue(exception.getMessage().contains("permanent modifications"));
     }
 
     @Test
     void rejectsLowConfidenceObjectWithoutUncertaintyWording() {
-        FurnitureDecision furnitureDecision = furnitureDecision(
-                FurnitureDecisionType.KEEP,
-                new BigDecimal("0.40")
-        );
+        DesignRequestSnapshot.Furniture bed = bed(FurnitureDecisionType.KEEP, new BigDecimal("0.40"));
 
         DesignPlan plan = plan(
-                new LayoutChange(
-                        furnitureDecision.getDetectedObject().getObjectUuid(),
-                        "bed",
-                        FurnitureDecisionType.KEEP,
-                        "Keep the bed in its current position.",
-                        "This preserves the existing layout."
-                ),
+                action(bed, LayoutChange.Type.KEEP,
+                        "Keep the bed against the wall.",
+                        "The bed anchors the room."),
                 standardAllocation(),
                 false
         );
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> validator.validate(
-                        plan,
-                        preferences(false),
-                        List.of(furnitureDecision)
-                )
-        );
-
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> validator.validate(plan, snapshot(bed, false)));
         assertTrue(exception.getMessage().contains("Low-confidence"));
     }
 
-    private FurnitureDecision furnitureDecision(
-            FurnitureDecisionType decision,
-            BigDecimal confidence
-    ) {
-        DetectedObject detectedObject = new DetectedObject(
-                UUID.randomUUID(),
-                1L,
-                "bed",
-                confidence,
-                null,
-                null,
-                null,
-                null,
-                "test-model"
+    @Test
+    void rejectsPlanOverBudget() {
+        DesignRequestSnapshot.Furniture bed = bed(FurnitureDecisionType.KEEP, new BigDecimal("0.95"));
+
+        DesignPlan plan = plan(
+                action(bed, LayoutChange.Type.KEEP, "Keep the bed.", "It is in good condition."),
+                List.of(new BudgetAllocation("Furniture", "Wardrobe", "Adds storage.", new BigDecimal("650.00"))),
+                false
         );
 
-        return new FurnitureDecision(detectedObject, decision);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> validator.validate(plan, snapshot(bed, false)));
+        assertTrue(exception.getMessage().contains("budget"));
     }
 
-    private ProjectPreferencesResponse preferences(boolean rentalFriendly) {
-        return new ProjectPreferencesResponse(
-                UUID.randomUUID(),
-                "Modern",
-                new BigDecimal("500.00"),
-                "USD",
-                List.of("white", "blue"),
-                "Bedroom",
-                rentalFriendly,
-                "Keep the room affordable.",
-                new BigDecimal("1000000.00")
+    @Test
+    void rejectsPermanentModificationInRentalBudget() {
+        DesignRequestSnapshot.Furniture bed = bed(FurnitureDecisionType.KEEP, new BigDecimal("0.95"));
+
+        DesignPlan plan = plan(
+                action(bed, LayoutChange.Type.KEEP, "Keep the bed.", "It is in good condition."),
+                List.of(new BudgetAllocation("Storage", "Built-in shelving", "Adds storage.", new BigDecimal("120.00"))),
+                true
         );
+
+        assertThrows(IllegalArgumentException.class, () -> validator.validate(plan, snapshot(bed, true)));
     }
 
-    private DesignPlan plan(
-            LayoutChange layoutChange,
-            List<BudgetAllocation> budgetAllocation,
-            boolean rentalFriendly
-    ) {
+    private DesignRequestSnapshot.Furniture bed(FurnitureDecisionType decision, BigDecimal confidence) {
+        return new DesignRequestSnapshot.Furniture(UUID.randomUUID(), "bed", confidence, null, decision);
+    }
+
+    private LayoutChange action(DesignRequestSnapshot.Furniture object, LayoutChange.Type type,
+            String instruction, String rationale) {
+        return new LayoutChange(object.objectId(), object.label(), object.decision(), type, instruction, rationale);
+    }
+
+    private DesignRequestSnapshot snapshot(DesignRequestSnapshot.Furniture object, boolean rentalFriendly) {
+        return new DesignRequestSnapshot("1", UUID.randomUUID(), null, List.of(object),
+                new DesignRequestSnapshot.Preferences("Modern", List.of("white", "blue"), "Bedroom",
+                        rentalFriendly, "Keep the room affordable."),
+                new DesignRequestSnapshot.Budget(new BigDecimal("500.00"), "USD"));
+    }
+
+    private DesignPlan plan(LayoutChange action, List<BudgetAllocation> budgetAllocation, boolean rentalFriendly) {
         BigDecimal total = budgetAllocation.stream()
                 .map(BudgetAllocation::estimatedCost)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new DesignPlan(
-                "A practical and budget-aware bedroom refresh.",
-                List.of(layoutChange),
-                budgetAllocation,
-                total,
-                "USD",
-                rentalFriendly
-                        ? List.of("Use removable and non-damaging upgrades only.")
-                        : List.of(),
-                List.of()
-        );
+        return new DesignPlan("1", "A practical and budget-aware bedroom refresh.", "Modern",
+                List.of(action), List.of(), budgetAllocation, total, "USD", List.of(), List.of(),
+                rentalFriendly ? List.of("Use removable and non-damaging upgrades only.") : List.of(),
+                rentalFriendly ? List.of("No drilling or repainting.") : List.of());
     }
 
     private List<BudgetAllocation> standardAllocation() {
-        return List.of(
-                new BudgetAllocation(
-                        "Decor",
-                        "Removable curtains",
-                        "Adds color without permanent changes.",
-                        new BigDecimal("35.00")
-                )
-        );
+        return List.of(new BudgetAllocation("Decor", "Removable curtains",
+                "Adds color without permanent changes.", new BigDecimal("35.00")));
     }
 }

@@ -42,7 +42,7 @@ class RecommendationRecoveryTest {
         return id;
     }
     Long design(UUID id) {
-        return jdbc.queryForObject("INSERT INTO design_results(project_id, plan_json, estimated_total_cost, currency, model_name) VALUES (?, '{}'::jsonb, 50, 'USD', 'fixture') RETURNING design_id", Long.class, id);
+        return jdbc.queryForObject("INSERT INTO design_results(project_id, plan_json, estimated_total_cost, currency, model_name, completed_at) VALUES (?, '{}'::jsonb, 50, 'USD', 'fixture', CURRENT_TIMESTAMP) RETURNING design_id", Long.class, id);
     }
     int sets(UUID id) {
         return jdbc.queryForObject("SELECT COUNT(*) FROM recommendation_sets WHERE project_id = ?", Integer.class, id);
