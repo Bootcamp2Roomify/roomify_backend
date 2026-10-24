@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17
+    image: postgres:17.11
     environment:
       POSTGRES_DB: roomify
       POSTGRES_USER: roomify
@@ -56,7 +56,7 @@ services:
         condition: service_healthy
 
   test:
-    image: maven:3.9-eclipse-temurin-21
+    image: maven:3.9.16-eclipse-temurin-21
     profiles: ["test"]
     working_dir: /app
     volumes:
