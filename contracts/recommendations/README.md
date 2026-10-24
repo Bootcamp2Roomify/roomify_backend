@@ -1,6 +1,6 @@
 # Recommendation and DIY contracts — v1
 
-These draft-2020-12 schemas describe generated payloads independently of a service/runtime. They introduce no generator calls or HTTP ingestion routes. The existing Spring backend owns validation and persistence; ROOM-99/100 own generation.
+These draft-2020-12 schemas describe generated payloads independently of a service/runtime. Generation lives in `RecommendationGenerationService` (`POST /api/projects/{id}/recommendations`, `POST …/recommendations/{itemId}/diy`). The existing Spring backend owns validation and persistence; ROOM-99/100 own generation.
 
 ## Files and usage
 
@@ -18,7 +18,7 @@ Every amount is a JSON number in one set/guide currency, TWD or USD, from 0 to 9
 
 The set has `schemaVersion: "1.0"`, `currency`, `budget`, `estimatedTotal`, `remainingBudget`, and up to six `items`. An empty affordable-purchases list is allowed. Generation owns the three-to-six-items rule when budget permits.
 
-Each item requires `name`, `category`, `reason`, `estimatedPrice`, `cheaperAlternative`, `searchQuery`, and boolean `diyEligible`. A required `cheaperAlternative` key is null or an object with required name/reason/searchQuery/estimatedPrice. Its price must be strictly lower than the item price in the same currency. Alternatives are options, not additional purchases; exclude them from the total. A zero-price primary item cannot have a cheaper alternative. Search queries are descriptive suggestions; prices are estimates, not live retailer quotes.
+Each item requires `name`, `category`, `reason`, `placement`, `estimatedPrice`, `cheaperAlternative`, `searchQuery`, and boolean `diyEligible`. `placement` (added for MVP Feature 7, "where it could be placed") is a required key whose value is null or a nonblank string of at most 300 characters. A required `cheaperAlternative` key is null or an object with required name/reason/searchQuery/estimatedPrice. Its price must be strictly lower than the item price in the same currency. Alternatives are options, not additional purchases; exclude them from the total. A zero-price primary item cannot have a cheaper alternative. Search queries are descriptive suggestions; prices are estimates, not live retailer quotes.
 
 Domain validation additionally requires the sum of primary item prices to equal estimatedTotal, estimatedTotal <= budget, and remainingBudget = budget - estimatedTotal. These relationships and the cheaper-than rule cannot be represented by the structural schemas alone.
 

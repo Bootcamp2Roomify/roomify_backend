@@ -87,6 +87,7 @@ public class RecommendationContractCodec {
     private void validateItem(RecommendationItem item) {
         require(item != null);
         text(item.name()); text(item.category()); text(item.reason()); text(item.searchQuery());
+        if (item.placement() != null) { text(item.placement()); require(item.placement().length() <= 300); }
         money(item.estimatedPrice()); require(item.diyEligible() != null);
         if (item.cheaperAlternative() != null) {
             var alt = item.cheaperAlternative();
