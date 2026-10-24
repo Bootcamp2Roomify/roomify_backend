@@ -9,6 +9,7 @@
       "name": "Desk lamp",
       "category": "lighting",
       "reason": "Improve desk lighting.",
+      "placement": "Beside the desk",
       "estimatedPrice": 19.99,
       "cheaperAlternative": {
         "name": "Basic lamp",
@@ -23,6 +24,7 @@
       "name": "Storage basket",
       "category": "storage",
       "reason": "Keep supplies together.",
+      "placement": null,
       "estimatedPrice": 10.0,
       "cheaperAlternative": null,
       "searchQuery": "small fabric storage basket",
