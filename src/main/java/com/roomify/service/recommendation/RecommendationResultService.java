@@ -84,7 +84,8 @@ public class RecommendationResultService {
                 throw inconsistent();
             }
             responseItems.add(new StoredRecommendationItem(stored.publicId(), item.name(), item.category(),
-                    item.reason(), item.estimatedPrice(), item.cheaperAlternative(), item.searchQuery(), item.diyEligible()));
+                    item.reason(), item.placement(), item.estimatedPrice(), item.cheaperAlternative(), item.searchQuery(),
+                    item.diyEligible()));
         }
         return new StoredRecommendationSet(row.publicId(), row.projectId(), row.designId(), payload.schemaVersion(),
                 payload.currency(), payload.budget(), payload.estimatedTotal(), payload.remainingBudget(),

@@ -53,6 +53,19 @@
             "minLength": 1,
             "pattern": "\\S"
           },
+          "placement": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300,
+                "pattern": "\\S"
+              }
+            ]
+          },
           "estimatedPrice": {
             "type": "number",
             "minimum": 0,
@@ -112,6 +125,7 @@
           "name",
           "category",
           "reason",
+          "placement",
           "estimatedPrice",
           "cheaperAlternative",
           "searchQuery",

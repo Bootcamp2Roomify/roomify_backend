@@ -82,9 +82,9 @@ class RecommendationContractCodecTest {
         assertThat(empty.items()).isEmpty();
         var set = codec.readSet("""
             {"schemaVersion":"1.0","currency":"USD","budget":0.3000,"estimatedTotal":0.30,"remainingBudget":0,
-             "items":[{"name":"A","category":"storage","reason":"organize","estimatedPrice":0.10,
+             "items":[{"name":"A","category":"storage","reason":"organize","placement":null,"estimatedPrice":0.10,
              "cheaperAlternative":null,"searchQuery":"A","diyEligible":false},
-             {"name":"B","category":"storage","reason":"organize","estimatedPrice":0.20,
+             {"name":"B","category":"storage","reason":"organize","placement":null,"estimatedPrice":0.20,
              "cheaperAlternative":null,"searchQuery":"B","diyEligible":true}]}
             """);
         assertThat(set.estimatedTotal()).isEqualByComparingTo(new BigDecimal("0.30"));
