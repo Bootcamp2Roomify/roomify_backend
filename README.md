@@ -5,6 +5,12 @@ rental-aware redesign: detected furniture you can keep, replace or remove, an AI
 a visual concept of the same room, shopping suggestions with cheaper alternatives, and beginner
 DIY guides. *Redesign more, buy less.*
 
+> **Release status: v0.9.0-rc1 — AI features unverified.** Accounts, projects, upload, detection,
+> review and preferences are tested end to end against the real stack. Plan, visual concept,
+> suggestion and DIY generation are implemented and tested with fake providers and with no key (clear
+> `503 AI_CONFIGURATION_ERROR`), but have **not yet been run against the live OpenAI API**, including
+> the new default image model `gpt-image-2.5-sunburst`.
+
 Related services: [roomify_frontend](https://github.com/Bootcamp2Roomify/roomify_frontend) (Next.js) ·
 [roomify_cv](https://github.com/Bootcamp2Roomify/roomify_cv) (FastAPI + YOLO11).
 Architecture and the hackathon submission package live in [`docs/submission/`](docs/submission/).
