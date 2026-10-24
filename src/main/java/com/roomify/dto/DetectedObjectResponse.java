@@ -13,7 +13,8 @@ public record DetectedObjectResponse(
     BigDecimal confidence,
     BoundingBoxResponse bbox,
     String modelVersion,
-    FurnitureDecisionType decision
+    FurnitureDecisionType decision,
+    String source
 ) {
     public static DetectedObjectResponse from(DetectedObject object, FurnitureDecisionType decision) {
         return new DetectedObjectResponse(
@@ -21,14 +22,16 @@ public record DetectedObjectResponse(
             object.getImageId(),
             object.getObjectClass(),
             object.getConfidence(),
-            new BoundingBoxResponse(
+            // Items added by hand have no box.
+            object.getXMin() == null ? null : new BoundingBoxResponse(
                 object.getXMin(),
                 object.getYMin(),
                 object.getXMax().subtract(object.getXMin()),
                 object.getYMax().subtract(object.getYMin())
             ),
             object.getModelVersion(),
-            decision
+            decision,
+            object.getSource()
         );
     }
 }

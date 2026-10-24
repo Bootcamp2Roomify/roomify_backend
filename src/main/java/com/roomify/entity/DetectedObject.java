@@ -66,6 +66,25 @@ public class DetectedObject {
     protected DetectedObject() {
     }
 
+    /**
+     * An item the person added because detection missed it. User-confirmed items (MANUAL) carry
+     * confidence 1 so the redesign treats them as certain; they have no bounding box.
+     */
+    public static DetectedObject manual(UUID projectId, Long imageId, String label) {
+        DetectedObject object = new DetectedObject(projectId, imageId, label, BigDecimal.ONE,
+                null, null, null, null, "manual");
+        object.source = "MANUAL";
+        return object;
+    }
+
+    /** The person corrected the label, so the item becomes user-confirmed; its box is kept. */
+    public void relabel(String label) {
+        this.objectClass = label;
+        this.confidence = BigDecimal.ONE;
+        this.source = "MANUAL";
+        this.updatedAt = Instant.now();
+    }
+
     public DetectedObject(
             UUID projectId,
             Long imageId,
