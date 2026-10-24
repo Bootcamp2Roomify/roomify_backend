@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "recommendation-set",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "currency": {
+      "type": "string",
+      "enum": [
+        "TWD",
+        "USD"
+      ]
+    },
+    "budget": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 9999999999.99,
+      "multipleOf": 0.01
+    },
+    "estimatedTotal": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 9999999999.99,
+      "multipleOf": 0.01
+    },
+    "remainingBudget": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 9999999999.99,
+      "multipleOf": 0.01
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "estimatedPrice": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 9999999999.99,
+            "multipleOf": 0.01
+          },
+          "cheaperAlternative": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  },
+                  "searchQuery": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  },
+                  "estimatedPrice": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 9999999999.99,
+                    "multipleOf": 0.01
+                  }
+                },
+                "required": [
+                  "name",
+                  "reason",
+                  "searchQuery",
+                  "estimatedPrice"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "searchQuery": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "diyEligible": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "category",
+          "reason",
+          "estimatedPrice",
+          "cheaperAlternative",
+          "searchQuery",
+          "diyEligible"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "currency",
+    "budget",
+    "estimatedTotal",
+    "remainingBudget",
+    "items"
+  ],
+  "additionalProperties": false
+}

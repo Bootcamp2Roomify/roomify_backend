@@ -67,7 +67,7 @@ class RoomProjectServiceTest {
                 "Vision service is unavailable. Please retry the analysis."
         );
 
-        when(projectRepository.findById(projectId))
+        when(projectRepository.findByIdForUpdate(projectId))
                 .thenReturn(Optional.of(project));
         when(imageRepository.findTopByProjectIdOrderByCreatedAtDesc(projectId))
                 .thenReturn(Optional.of(image));
@@ -101,7 +101,7 @@ class RoomProjectServiceTest {
                 2000L
         );
 
-        when(projectRepository.findById(projectId))
+        when(projectRepository.findByIdForUpdate(projectId))
                 .thenReturn(Optional.of(project));
         when(imageRepository.findTopByProjectIdOrderByCreatedAtDesc(projectId))
                 .thenReturn(Optional.of(image));
@@ -114,6 +114,9 @@ class RoomProjectServiceTest {
         assertThat(response.status()).isEqualTo(RoomProjectStatus.ANALYZED);
         assertThat(response.objects()).isEmpty();
 
+        var order = org.mockito.Mockito.inOrder(projectRepository, imageRepository);
+        order.verify(projectRepository).findByIdForUpdate(projectId);
+        order.verify(imageRepository).findTopByProjectIdOrderByCreatedAtDesc(projectId);
         verify(visionServiceClient, never()).analyze(any());
         verify(detectedObjectRepository, never()).deleteByImageId(any());
         verify(detectedObjectRepository, never()).saveAll(any());

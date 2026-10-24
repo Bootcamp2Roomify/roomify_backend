@@ -1,6 +1,7 @@
 package com.roomify.dto;
 
 import com.roomify.entity.DetectedObject;
+import com.roomify.entity.FurnitureDecisionType;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -11,9 +12,10 @@ public record DetectedObjectResponse(
     String label,
     BigDecimal confidence,
     BoundingBoxResponse bbox,
-    String modelVersion
+    String modelVersion,
+    FurnitureDecisionType decision
 ) {
-    public static DetectedObjectResponse from(DetectedObject object) {
+    public static DetectedObjectResponse from(DetectedObject object, FurnitureDecisionType decision) {
         return new DetectedObjectResponse(
             object.getObjectUuid(),
             object.getImageId(),
@@ -25,7 +27,8 @@ public record DetectedObjectResponse(
                 object.getXMax().subtract(object.getXMin()),
                 object.getYMax().subtract(object.getYMin())
             ),
-            object.getModelVersion()
+            object.getModelVersion(),
+            decision
         );
     }
 }
