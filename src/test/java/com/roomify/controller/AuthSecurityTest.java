@@ -104,7 +104,8 @@ class AuthSecurityTest {
         String owner = register(uniqueEmail(), "password123");
         String stranger = register(uniqueEmail(), "password123");
 
-        String created = mvc.perform(post("/api/projects").header("Authorization", "Bearer " + owner))
+        String created = mvc.perform(post("/api/projects").header("Authorization", "Bearer " + owner)
+                        .contentType(MediaType.APPLICATION_JSON).content(PROJECT))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         String projectId = mapper.readTree(created).get("id").asText();
@@ -121,6 +122,8 @@ class AuthSecurityTest {
     }
 
     /** Registers, then logs in, returning the access token. */
+    static final String PROJECT = "{\"name\":\"Dorm\",\"roomType\":\"DORM_ROOM\",\"rentalStatus\":\"DORMITORY\"}";
+
     private String register(String email, String password) throws Exception {
         mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content(credentials(email, password).replace("}", ",\"displayName\":\"Tester\"}")))
