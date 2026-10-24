@@ -91,6 +91,29 @@ class OpenAiDesignProviderTest {
     }
 
     @Test
+    void rejectedKeyIsAConfigurationErrorAndIsNotRetried() {
+        var properties = properties("gpt-4o-mini");
+        properties.setMaxRetries(2);
+        var fixture = fixture(properties);
+        fixture.server().expect(requestTo("https://api.test/v1/chat/completions"))
+                .andRespond(withStatus(HttpStatus.UNAUTHORIZED).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":{\"type\":\"invalid_request_error\",\"code\":\"invalid_api_key\"}}"));
+        assertThatThrownBy(() -> fixture.provider().generateJson("system", "user"))
+                .isInstanceOf(AiProviderConfigurationException.class);
+        fixture.server().verify();
+    }
+
+    @Test
+    void placeholderKeyFailsBeforeAnyNetworkCall() {
+        var properties = properties("gpt-4o-mini");
+        properties.setApiKey("your_openai_api_key");
+        var fixture = fixture(properties);
+        assertThatThrownBy(() -> fixture.provider().generateJson("system", "user"))
+                .isInstanceOf(AiProviderConfigurationException.class);
+        fixture.server().verify();
+    }
+
+    @Test
     void describesOpenAiErrorsWithoutTheirMessage() {
         assertThat(OpenAiErrors.describe("{\"error\":{\"type\":\"invalid_request_error\",\"code\":\"unsupported_parameter\",\"param\":\"max_tokens\",\"message\":\"secret prompt text\"}}"))
                 .isEqualTo("type=invalid_request_error code=unsupported_parameter param=max_tokens")

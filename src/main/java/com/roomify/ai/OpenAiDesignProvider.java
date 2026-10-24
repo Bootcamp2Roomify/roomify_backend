@@ -87,7 +87,7 @@ public class OpenAiDesignProvider implements AiDesignProvider {
     }
 
         private void validateConfiguration() {
-        if (!StringUtils.hasText(properties.getApiKey())) {
+        if (!properties.hasUsableApiKey()) {
             throw new AiProviderConfigurationException(
                     "AI_API_KEY is required when AI_PROVIDER=openai."
             );
@@ -139,6 +139,11 @@ public class OpenAiDesignProvider implements AiDesignProvider {
                     statusCode,
                     OpenAiErrors.describe(exception.getResponseBodyAsString())
             );
+
+            // A rejected key is a configuration problem, not a transient failure.
+            if (statusCode == 401 || statusCode == 403) {
+                throw new AiProviderConfigurationException("OpenAI rejected the configured API key.");
+            }
 
             if (statusCode == 408 || statusCode == 429 || statusCode >= 500) {
                 throw new AiProviderRetryableException(
