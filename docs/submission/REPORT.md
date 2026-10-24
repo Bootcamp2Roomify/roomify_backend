@@ -5,9 +5,10 @@ Code: [backend](https://github.com/Bootcamp2Roomify/roomify_backend) ·
 [CV service](https://github.com/Bootcamp2Roomify/roomify_cv) ·
 [frontend](https://github.com/Bootcamp2Roomify/roomify_frontend)
 
-> Status of this report (2026-10-24): everything below is implemented, merged and tested. The
-> generation results in §6.2 are **not yet measured** because no OpenAI key was configured on the
-> evaluation machine; they are left blank rather than estimated.
+> **Draft — release candidate v0.9.0-rc1 (2026-10-24).** Everything below is implemented, merged and
+> tested. AI quality, latency, cost and budget-compliance results (§6.2) are **pending: requires OpenAI
+> key** — no key was available, so they are left empty rather than estimated, and the AI features have
+> not yet been run against the live API.
 
 ## 1. Problem
 
@@ -56,45 +57,9 @@ Source: [`architecture/architecture.mmd`](architecture/architecture.mmd).
 
 ### 3.1 Data flow
 
-```mermaid
-sequenceDiagram
-  participant U as Browser
-  participant F as Next.js bridge
-  participant B as Spring API
-  participant C as CV service
-  participant L as OpenAI text
-  participant I as OpenAI image
-  participant D as Postgres / S3
-  U->>F: upload photo (cookie)
-  F->>B: POST /projects/{id}/image (Bearer)
-  B->>D: store photo + metadata
-  U->>F: analyze
-  F->>B: POST /projects/{id}/analysis
-  B->>C: multipart photo
-  C-->>B: labels, confidence, boxes
-  B->>D: detections (stable UUIDs)
-  U->>F: decisions, edits, preferences
-  F->>B: PATCH/POST/PUT …
-  U->>F: generate redesign
-  F->>B: POST /projects/{id}/designs
-  B->>D: immutable input snapshot (PENDING)
-  B->>L: system rules + snapshot JSON
-  L-->>B: plan JSON
-  B->>B: validate (schema, decisions, budget, rental, uncertainty)
-  B->>D: plan (SUCCEEDED) or error code (FAILED)
-  U->>F: see it in my room
-  F->>B: POST /designs/{id}/prototype
-  B->>D: original photo from the snapshot
-  B->>I: images/edits (photo + plan-derived prompt)
-  I-->>B: image
-  B->>D: concept image
-  U->>F: suggestions / DIY
-  F->>B: POST /recommendations, POST …/{item}/diy
-  B->>L: plan + budget + rules
-  L-->>B: items / guide JSON
-  B->>B: recompute totals, cheaper-than check, rental and safety filters
-  B->>D: suggestion set / guide
-```
+![Request flow](architecture/data-flow.png)
+
+Source: [`architecture/data-flow.mmd`](architecture/data-flow.mmd).
 
 ### 3.2 Data model (main tables)
 
@@ -110,7 +75,7 @@ sequenceDiagram
 |---|---|---|---|
 | Furniture detection | Ultralytics **YOLO11n**, COCO-pretrained | Runs on CPU in ~32 ms, 5 MB, no training needed | confidence ≥ 0.25; six classes kept: bed, chair, sofa, table, tv, plant |
 | Plan, suggestions, DIY | OpenAI **gpt-4o-mini** (Chat Completions, `json_object`) | Cheapest model that follows long JSON schemas | temperature 0.1, ≤ 4000 output tokens, 1 corrective retry |
-| Visual concept | OpenAI **gpt-image-2.5-sunburst** (`images/edits`) | Edits the user's real photo; OpenAI's replacement for the retired `gpt-image-1`, positioned for precise edits | 1024×1024, quality `low` |
+| Visual concept | OpenAI **gpt-image-2.5-sunburst** (`images/edits`) | Edits the user's real photo; OpenAI's replacement for the retired `gpt-image-1`, positioned for precise edits (not yet called live) | 1024×1024, quality `low` |
 
 Model names are configuration. Two provider facts discovered during the build changed the defaults:
 `gpt-image-1` was shut down by OpenAI on 2026-10-23, and `gpt-4o-mini` shuts down on 2027-01-14 (its
@@ -155,19 +120,27 @@ the product's HTTP API. Full table, method and failure cases: [EVALUATION.md](EV
 
 Latency: 32 ms p50 / 41 ms p95 model time on a laptop CPU.
 
-### 6.2 Generation (not yet measured)
+### 6.2 Generation
 
-Plan budget compliance, decision/rental compliance, suggestion budget fit, DIY safety rejections,
-latency and cost per redesign — method defined in [EVALUATION.md §2](EVALUATION.md); numbers to be
-filled in from a run with an OpenAI key.
+| Result | Value |
+|---|---|
+| Plan budget compliance | **Pending: requires OpenAI key** |
+| Plan decision and rental compliance | **Pending: requires OpenAI key** |
+| Suggestions within budget | **Pending: requires OpenAI key** |
+| DIY safety-filter rejections | **Pending: requires OpenAI key** |
+| Latency per AI step | **Pending: requires OpenAI key** |
+| Cost per redesign | **Pending: requires OpenAI key** |
+
+Method: [EVALUATION.md §2](EVALUATION.md). Verified without a key: every AI action fails with a clear
+`AI_CONFIGURATION_ERROR` message and leaves the project usable (EVALUATION.md §3).
 
 ### 6.3 Engineering quality
 
 | Suite | Result (develop, 2026-10-24) |
 |---|---|
-| Backend JUnit (Postgres 17.11) | 142 passed |
+| Backend JUnit (Postgres 17.11) | 149 passed |
 | CV pytest | 21 passed |
-| Frontend Vitest | 228 passed |
+| Frontend Vitest | 230 passed |
 | Playwright, stubbed API, chromium + mobile | 39 passed, 4 consecutive runs |
 | Playwright, fake Spring API through Next | 6 passed |
 | Playwright, **real stack** (no AI key) | full journey, privacy, logout, CV-down fallback passed |
@@ -187,7 +160,8 @@ unreachable objects): no secrets.
 - **One room, one photo** per project (as scoped).
 - **Provider dependence.** Two of three models changed status during the build; defaults may need
   updating again. The text model's deprecation date (2027-01-14) is documented.
-- **Licensing.** The CV service depends on Ultralytics (AGPL-3.0); the repositories are labelled MIT.
+- **AI features unverified live.** Plan, concept, suggestion and DIY generation have only run against
+  fake providers; the default image model (`gpt-image-2.5-sunburst`) has never been called.
 
 ## 8. Future work
 

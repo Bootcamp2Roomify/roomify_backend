@@ -37,7 +37,7 @@ Why this shape:
 | Database | Neon Free (0.5 GB storage, scales to zero after 5 min idle) | $0 |
 | Images | Existing AWS S3 bucket (Standard ≈ $0.023/GB-month) | < $0.10 |
 | **Infrastructure total** | | **≈ $13.40 / month** |
-| OpenAI usage | per redesign: plan + concept + suggestions + DIY | **not yet measured** (see EVALUATION.md §2) |
+| OpenAI usage | per redesign: plan + concept + suggestions + DIY | **Pending: requires OpenAI key** (EVALUATION.md §2) |
 
 Notes: Fly bills per second, so stopping the machines after judging stops the cost. Fly raised its
 RAM price on 2026-10-01 (1 GB machine $5.70 → $6.70); Frankfurt is $7.73. Neon's first query after

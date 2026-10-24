@@ -149,3 +149,13 @@ Docs in this folder: REPORT.md, EVALUATION.md (detection measured), DEPENDENCIES
    recording, release v1.0.0.
 2. Approve (or not) the deployment proposal and provide hosting credentials.
 3. Licensing: Ultralytics is AGPL-3.0; roomify_cv is labelled MIT.
+
+## 2026-10-24 (afternoon) — release candidate without an OpenAI key
+
+- Graceful no-key behaviour: placeholder/blank/rejected keys → `503 AI_CONFIGURATION_ERROR` everywhere,
+  nothing half-stored (backend#39, frontend#24).
+- roomify_cv relicensed AGPL-3.0, MIT notice kept in NOTICE (cv#9).
+- Docs finalized with "Pending: requires OpenAI key" rows; REPORT.pdf draft; data-flow diagram.
+- Non-AI demo scenes recorded on the real stack (frontend#25); draft cut 2:55 with pending slates;
+  gallery screenshots; DEVPOST_STORY.md; CHECKLIST.md.
+- ffmpeg 9.0.2 installed with Homebrew for video assembly.

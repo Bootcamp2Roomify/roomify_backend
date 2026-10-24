@@ -1,23 +1,36 @@
-# Demo video — script and shot list (target 4:30, hard limit 5:00)
+# Demo video — script and shot list
 
-Recorded parts come from `record-walkthrough.spec.ts` (Playwright, 1920×1080) and are cut together by
-`assemble.sh` (ffmpeg). Segments marked **[PLACEHOLDER]** are slates for the team to replace with their
-own footage and voice-over; nothing in them claims results that were not measured.
+Target 4:30 (hard limit 5:00). **Draft cut:** [`roomify-demo-draft.mp4`](roomify-demo-draft.mp4)
+(1920×1080, H.264, 2:55) built on 2026-10-24 from real-stack recordings; AI scenes are slates.
 
-| # | Time | Shot | On screen | Voice-over (draft) |
-|---|---|---|---|---|
-| 1 | 0:00–0:20 | **[PLACEHOLDER] Team intro** | Slate "Team Bootcamp2Roomify" | Who we are and our roles. |
-| 2 | 0:20–0:45 | Problem | Slate with the four problems from the scope | Students and renters can't picture a redesign in *their* room, can't see total cost, can't drill or paint, and throw away usable furniture. |
-| 3 | 0:45–1:00 | Sign up, dashboard | `walkthrough` clip 1 | Every room is a private project under your account. |
-| 4 | 1:00–1:25 | Create project + upload | clip 2 | Name it, say it's a rental, upload one photo. |
-| 5 | 1:25–2:00 | Detection review | clip 3 | YOLO finds the main furniture. You decide Keep, Replace, Remove or Unsure, rename what it got wrong, and add what it missed — like the desk COCO can't detect. |
-| 6 | 2:00–2:20 | Preferences | clip 4 | Style, colours, a 300-dollar budget; rental mode is already on because it's a rental. |
-| 7 | 2:20–3:00 | Redesign plan | clip 5 | The plan keeps what you kept, replaces what you chose, stays inside the budget and avoids drilling — the server checks all of that before saving. |
-| 8 | 3:00–3:25 | Visual concept | clip 6 | The same photo, redesigned. It's a concept, and we say so. |
-| 9 | 3:25–4:00 | Suggestions, DIY, budget | clip 7 | Estimated prices, where each piece goes, a cheaper option, and a beginner DIY guide with safety notes. |
-| 10 | 4:00–4:15 | Architecture | `architecture.png` | Next.js, Spring Boot, a FastAPI YOLO service, OpenAI, Postgres and S3. |
-| 11 | 4:15–4:30 | Results | Slate with the numbers from EVALUATION.md | Measured on 60 held-out COCO rooms: detection precision 0.70, recall 0.62; plus the plan and cost numbers once measured. Be explicit about limitations. |
-| 12 | 4:30–4:40 | **[PLACEHOLDER] Close** | Slate with repo links | Thanks. |
+How it is made:
 
-Rules for the voice-over: only quote numbers that appear in `EVALUATION.md`; call prices "estimates"
-and the image a "concept".
+1. Start the stack (Postgres, CV, backend, `next start`).
+2. Record: `LIVE_RECORD=1 LIVE_SLOWMO=350 npx playwright test -c playwright.live.config.ts -g walkthrough`
+   in roomify_frontend (add `LIVE_AI=1` once an OpenAI key is configured to record scenes 7–9).
+3. Assemble: `video/assemble.sh <roomify_frontend>/test-results/walkthrough architecture/architecture.png roomify-demo.mp4`.
+4. Replace the placeholders and add the voice-over in any editor.
+
+Status: **recorded** = real footage in the draft · **pending: requires OpenAI key** = slate in the
+draft, recorded automatically with `LIVE_AI=1` · **placeholder** = for the team to film/record.
+
+| # | Length (draft) | Shot | Status | On screen | Voice-over (draft — only quote numbers from EVALUATION.md) |
+|---|---|---|---|---|---|
+| 1 | 0:20 | Team intro | placeholder | Slate "Team intro" | Who we are and our roles. |
+| 2 | 0:20 | Problem | recorded (slate) | Four problems from the scope | Students and renters can't picture a redesign in *their* room, can't see the total cost, can't drill or paint, and throw away usable furniture. |
+| 3 | 0:14 | Sign up | recorded | Register → empty dashboard | Every room is a private project under your own account. |
+| 4 | 0:13 | Create project + upload | recorded | Name "My dorm room", Dormitory, upload photo, preview | Name it, say where you live, upload one photo. |
+| 5 | 0:20 | Detection review + manual add | recorded | Real YOLO boxes (bed 93 %, plant 85 %), Keep / Replace, add "desk" | The detector finds the main furniture. You decide Keep, Replace, Remove or Unsure — and add what it can't see, like this desk: its training data has no desk class. |
+| 6 | 0:15 | Preferences | recorded | Scandinavian, 300 USD, colours, requirement; rental mode already on | Style, colours, a 300-dollar budget. Rental-Friendly Mode is on because it's a dorm. |
+| 7 | 0:14 | Dashboard | recorded | Project card with photo and next step | Everything is saved; you can come back any time. |
+| 8 | ~0:40 | Redesign plan | **pending: requires OpenAI key** | Plan: keeping / replacing / adding, budget table, rental notes | The plan keeps what you kept, changes what you chose, fits the budget and avoids drilling — and the server checks all of that before it's saved. |
+| 9 | ~0:25 | Visual concept | **pending: requires OpenAI key** | Before / after | Your own photo, redesigned. It's a concept, and we say so. |
+| 10 | ~0:35 | Suggestions, DIY, budget | **pending: requires OpenAI key** | Item cards, cheaper option, DIY guide, budget summary | Estimated prices, where each piece goes, a cheaper option, and a beginner DIY guide with safety notes. |
+| 11 | 0:15 | Architecture | recorded (still) | `architecture.png` | Next.js, Spring Boot, a FastAPI YOLO service, OpenAI, Postgres and S3. |
+| 12 | 0:15 | Results | recorded (slate) | Detection P 0.70 / R 0.62 / 32 ms; AI results pending | Measured on 60 held-out COCO rooms. *(Add plan compliance, latency and cost once measured; never estimate them.)* |
+| 13 | 0:10 | Close | placeholder | Slate with repo link | Thanks. |
+
+Expected final length with AI scenes: about 4:20.
+
+Rules for the voice-over: call prices "estimates" and the image a "concept"; do not claim measured AI
+quality until EVALUATION.md §2 has numbers.

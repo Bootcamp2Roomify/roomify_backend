@@ -57,7 +57,7 @@ Versions not written in the POM come from the Spring Boot 3.5.0 parent BOM, whic
 | Service | Model / API | Configured by |
 |---|---|---|
 | OpenAI Chat Completions | `gpt-4o-mini`, `response_format: json_object` | `AI_MODEL`, `OPENAI_API_KEY` |
-| OpenAI Images (edits) | `gpt-image-1`, 1024×1024, `low` quality | `AI_IMAGE_MODEL`, `AI_IMAGE_SIZE`, `AI_IMAGE_QUALITY` |
+| OpenAI Images (edits) | `gpt-image-2.5-sunburst`, 1024×1024, `low` quality (replaces `gpt-image-1`, retired 2026-10-23; not yet called live) | `AI_IMAGE_MODEL`, `AI_IMAGE_SIZE`, `AI_IMAGE_QUALITY` |
 | AWS S3 | any bucket in `AWS_REGION` | `STORAGE_TYPE=s3`, `S3_BUCKET` |
 
 Model names are configuration, not code: switching models needs no rebuild.

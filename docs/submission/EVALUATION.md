@@ -56,8 +56,21 @@ Green = ground truth, red = prediction with confidence. Images © their Flickr a
 
 ## 2. Redesign plan, visual concept and suggestions (OpenAI)
 
-**Not yet measured.** These require `OPENAI_API_KEY`, which was not configured on the evaluation
-machine at the time of writing. The harness is ready:
+**Pending: requires OpenAI key** — no `OPENAI_API_KEY` has been configured, so none of these
+have been measured. No values are estimated or borrowed from model cards.
+
+| Result | Value |
+|---|---|
+| Plan budget compliance (first attempt / after corrective retry) | **Pending: requires OpenAI key** |
+| Plan decision compliance (KEEP kept, REMOVE removed) | **Pending: requires OpenAI key** |
+| Rental-mode compliance (no permanent work) | **Pending: requires OpenAI key** |
+| Suggestion sets within budget; cheaper-alternative coverage | **Pending: requires OpenAI key** |
+| DIY guides rejected by the safety filter | **Pending: requires OpenAI key** |
+| Visual-concept quality (architecture preserved, kept items visible) | **Pending: requires OpenAI key** |
+| Latency p50 / p95: plan, concept, suggestions, DIY | **Pending: requires OpenAI key** |
+| Cost per full redesign (tokens × list price on the run date) | **Pending: requires OpenAI key** |
+
+The harness is ready:
 
 - the backend logs one content-free line per provider call
   (`AI usage kind=text|image model=… promptTokens=… completionTokens=… reasoningTokens=… latencyMs=…`);
@@ -75,13 +88,29 @@ Planned measurements (same rooms, fixed budgets of 150 / 300 / 600 USD, rental o
 | Latency | p50 / p95 per call type from the usage log |
 | Cost | tokens × OpenAI list prices on the day of the run |
 
-## 3. Automated test results (2026-10-24, develop)
+## 3. Behaviour without an OpenAI key (verified)
+
+`MissingAiKeyTest` runs the real OpenAI provider beans with no key; a blank key, an unedited
+`.env.example` placeholder and a key rejected by OpenAI (401/403) all count as "not configured".
+
+| Action | Response | State afterwards |
+|---|---|---|
+| Generate plan (twice) | `503 AI_CONFIGURATION_ERROR` | attempt stored as FAILED with that code, nothing pending, project status unchanged, retry allowed |
+| Visual concept | `503 AI_CONFIGURATION_ERROR` | no image asset written |
+| Suggestions | `503 AI_CONFIGURATION_ERROR` | no suggestion set written |
+| DIY guide | `503 AI_CONFIGURATION_ERROR` | no guide written; saved plan still readable |
+
+The UI shows: "AI generation is not configured on this server yet (no valid OpenAI key). Your photo,
+furniture and preferences are saved — try again once AI is enabled." (frontend tests cover all four
+actions; the real-stack browser journey shows it for the plan).
+
+## 4. Automated test results (2026-10-24, develop)
 
 | Suite | Result |
 |---|---|
-| Backend (JUnit, Postgres 17.11) | 142 passed |
+| Backend (JUnit, Postgres 17.11) | 149 passed |
 | CV service (pytest) | 21 passed |
-| Frontend unit (Vitest) | 228 passed |
+| Frontend unit (Vitest) | 230 passed |
 | Browser, stubbed API (Playwright, chromium + mobile) | 39 passed, stable over 4 consecutive runs |
 | Browser, fake Spring API through Next (Playwright) | 6 passed |
 | Browser, real stack — no AI key (Playwright `tests/live`) | journey, privacy, logout, CV-down manual entry: all passed |

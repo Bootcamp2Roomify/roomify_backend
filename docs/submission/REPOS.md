@@ -13,7 +13,12 @@ placeholders have ever been committed, and `.env` is git-ignored everywhere.
 
 No visibility change is needed. (None will be made without the project owner's approval.)
 
-Licensing note for the owner: all three repos carry an MIT `LICENSE`, but the CV service depends on
-**Ultralytics, which is AGPL-3.0**. Publishing the source satisfies AGPL's source-availability intent,
-yet labelling roomify_cv "MIT" is likely inaccurate. Consider relicensing roomify_cv under AGPL-3.0
-(not legal advice).
+## Licenses
+
+| Repo | License |
+|---|---|
+| roomify_frontend | MIT |
+| roomify_backend | MIT |
+| roomify_cv | **AGPL-3.0** (relicensed 2026-10-24 to match Ultralytics YOLO; earlier MIT notice kept in `NOTICE`) |
+
+The backend calls the CV service over HTTP as a separate program; the frontend never touches it.
