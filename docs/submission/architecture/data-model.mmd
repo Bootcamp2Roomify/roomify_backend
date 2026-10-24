@@ -1,0 +1,18 @@
+%% Roomify main tables (Flyway V1-V10). Rendered by docs/submission/build.sh.
+erDiagram
+  users ||--o{ room_projects : owns
+  room_projects ||--o{ room_images : has
+  room_images ||--o{ detected_objects : contains
+  detected_objects ||--o| furniture_decisions : "decided as"
+  room_projects ||--o| project_preferences : has
+  room_projects ||--o{ design_requests : "input snapshot"
+  design_requests ||--|| design_results : produces
+  design_results ||--o| design_assets : "visual concept"
+  design_results ||--o{ recommendation_sets : "suggestions for"
+  recommendation_sets ||--|{ recommendation_items : lists
+  recommendation_items ||--o{ recommendation_diy_guides : "DIY guide"
+  users { bigint user_id PK  string email  string password_hash }
+  room_projects { uuid project_id PK  bigint user_id FK  string name  string room_type  string rental_status  string status }
+  detected_objects { uuid object_uuid  string object_class  numeric confidence  string source  boolean active }
+  furniture_decisions { string decision }
+  design_results { bigint design_id PK  jsonb plan_json  string status  string error_code }

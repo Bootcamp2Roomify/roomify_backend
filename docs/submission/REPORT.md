@@ -1,4 +1,4 @@
-# Roomify — technical report
+# Technical Report
 
 *Redesign more, buy less.* Devpost: <https://devpost.com/software/roomify-hsc4yn> ·
 Code: [backend](https://github.com/Bootcamp2Roomify/roomify_backend) ·
@@ -43,9 +43,8 @@ must pass deterministic validation before it is stored.
 
 ## 3. System design
 
-![Architecture](architecture/architecture.png)
+![Roomify system architecture.](architecture/architecture.png)
 
-Source: [`architecture/architecture.mmd`](architecture/architecture.mmd).
 
 | Service | Stack | Responsibility |
 |---|---|---|
@@ -57,9 +56,8 @@ Source: [`architecture/architecture.mmd`](architecture/architecture.mmd).
 
 ### 3.1 Data flow
 
-![Request flow](architecture/data-flow.png)
+![Roomify request flow from upload to plan, visual concept and suggestions.](architecture/data-flow.png)
 
-Source: [`architecture/data-flow.mmd`](architecture/data-flow.mmd).
 
 ### 3.2 Data model (main tables)
 

@@ -7,7 +7,7 @@ point of the three services and already hosts `docs/`, so one place holds the cr
 ## Environment notes (2026-10-24)
 
 - `scope.md` was missing from the workspace; regenerated from the source Google Doc
-  ("ROOMIFY-project scope") and saved as `docs/submission/scope.md`.
+  (the team's scope document) and saved as `docs/submission/scope.md`.
 - No Jira connector is available. ROOM-87..101 were reconstructed from PR titles, branch
   names, commit messages and in-repo docs (see "Backlog mapping"); unknown titles are marked `?`.
 - Local ports 5433 and 8080 are used by unrelated projects' containers; Roomify runs on
@@ -155,7 +155,18 @@ Docs in this folder: REPORT.md, EVALUATION.md (detection measured), DEPENDENCIES
 - Graceful no-key behaviour: placeholder/blank/rejected keys → `503 AI_CONFIGURATION_ERROR` everywhere,
   nothing half-stored (backend#39, frontend#24).
 - roomify_cv relicensed AGPL-3.0, MIT notice kept in NOTICE (cv#9).
-- Docs finalized with "Pending: requires OpenAI key" rows; REPORT.pdf draft; data-flow diagram.
+- Docs finalized with "Pending: requires OpenAI key" rows; draft report PDF (since replaced by `final/`); data-flow diagram.
 - Non-AI demo scenes recorded on the real stack (frontend#25); draft cut 2:55 with pending slates;
   gallery screenshots; DEVPOST_STORY.md; CHECKLIST.md.
 - ffmpeg 9.0.2 installed with Homebrew for video assembly.
+
+## 2026-10-24 (evening) — judge-ready documents
+
+- `build.sh` builds `final/`: six documents as PDF + DOCX and the combined Submission Pack PDF.
+  pandoc is the single parser; PDFs are laid out by Paged.js in Chromium; DOCX uses a generated
+  reference template, running header/footer and embedded Source Serif 4 / Source Code Pro (Adobe
+  releases, SHA-256 pinned). Diagrams rendered from Mermaid in the same typeface.
+- New ARCHITECTURE.md; diagrams redrawn for portrait pages; failure cases as captioned figures.
+- Product name "Roomify" everywhere: UI wordmark (frontend#27), scope title, diagrams, video slates,
+  file names. Clips, gallery and draft video re-recorded with the corrected UI.
+- Tools installed with Homebrew for the build/QA: pandoc 3.12.1, LibreOffice (DOCX layout check).

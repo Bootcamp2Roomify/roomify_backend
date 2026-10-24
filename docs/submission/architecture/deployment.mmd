@@ -1,0 +1,8 @@
+%% Roomify proposed deployment (not deployed). Rendered by docs/submission/build.sh.
+flowchart LR
+  B["Browser"] -- HTTPS --> V["Vercel (Hobby)<br/>Roomify frontend"]
+  V -- "HTTPS + Bearer token" --> A["Fly.io app roomify-api<br/>Roomify API · 1 GB"]
+  A -- "private network only<br/>(no public port)" --> C["Fly.io app roomify-cv<br/>Roomify CV service · 1 GB"]
+  A --> N[("Neon Postgres<br/>Free plan")]
+  A --> S[("AWS S3 bucket<br/>(existing)")]
+  A --> O["OpenAI API"]

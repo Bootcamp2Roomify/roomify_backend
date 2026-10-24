@@ -1,0 +1,74 @@
+/* Print design for the Roomify submission documents (rendered by Paged.js in Chromium). */
+@page {
+  size: A4;
+  margin: 24mm 22mm 22mm 22mm;
+  @top-left { content: "Roomify"; font: 600 8.5pt/1 "Source Serif 4", serif; color: #555; vertical-align: bottom; padding-bottom: 4mm; border-bottom: 0.4pt solid #bdbdbd; }
+  @top-right { content: string(doctitle); font: 8.5pt/1 "Source Serif 4", serif; color: #555; vertical-align: bottom; padding-bottom: 4mm; border-bottom: 0.4pt solid #bdbdbd; }
+  @bottom-left { content: "__FOOTER__"; font: 8pt/1 "Source Serif 4", serif; color: #777; vertical-align: top; padding-top: 4mm; }
+  @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8pt/1 "Source Serif 4", serif; color: #777; vertical-align: top; padding-top: 4mm; }
+}
+@page cover {
+  @top-left { content: none; border: none; }
+  @top-right { content: none; border: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+:root { --ink: #1a1a1a; --muted: #555; --rule: #c9c9c9; --tint: #f3f3f1; --link: #1f3a6e; }
+html { font: 10pt/1.5 "Source Serif 4", serif; color: var(--ink); font-kerning: normal; hyphens: auto; }
+body { margin: 0; }
+p, li { orphans: 3; widows: 3; }
+p { margin: 0 0 6pt; text-align: left; }
+a { color: var(--link); text-decoration: none; hyphens: none; }
+strong { font-weight: 700; }
+code { hyphens: none; font: 8.6pt/1.4 "Source Code Pro", monospace; background: var(--tint); padding: 0 2pt; border-radius: 2pt; }
+pre { font: 8.4pt/1.45 "Source Code Pro", monospace; background: var(--tint); padding: 6pt 8pt; border-left: 2pt solid var(--rule);
+      white-space: pre-wrap; break-inside: avoid; margin: 6pt 0 10pt; }
+pre code { background: none; padding: 0; }
+ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
+li { margin-bottom: 2pt; }
+blockquote { margin: 8pt 0 12pt; padding: 6pt 10pt; border-left: 2pt solid #8a8a8a; background: var(--tint); }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Cover */
+.cover { page: cover; height: 248mm; display: flex; flex-direction: column; justify-content: space-between; break-after: page; }
+.cover .brand { font-size: 13pt; font-weight: 700; letter-spacing: 0.02em; margin-top: 52mm; }
+.cover .rule { border: 0; border-top: 1.2pt solid var(--ink); width: 34mm; margin: 6mm 0 9mm; }
+.cover h1 { font-size: 32pt; line-height: 1.12; font-weight: 700; margin: 0 0 6mm; string-set: doctitle content(text); }
+.cover .subtitle { font-size: 12.5pt; color: var(--muted); max-width: 135mm; line-height: 1.45; }
+.cover .meta { font-size: 9.5pt; color: var(--muted); line-height: 1.6; border-top: 0.4pt solid var(--rule); padding-top: 5mm; }
+.cover .meta strong { color: var(--ink); }
+
+/* Contents (pack only) */
+.toc { break-after: page; }
+.toc h1 { string-set: doctitle content(text); }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc a { display: flex; align-items: baseline; color: var(--ink); }
+.toc a .dots { flex: 1; border-bottom: 0.6pt dotted #9a9a9a; margin: 0 4pt; transform: translateY(-2pt); }
+.toc a::after { content: target-counter(attr(href), page); font-variant-numeric: tabular-nums; }
+.toc .toc-chapter > a { font-weight: 700; font-size: 11pt; margin-top: 9pt; }
+.toc .toc-section > a { font-size: 9.5pt; padding-left: 12pt; margin-top: 2pt; color: #333; }
+
+/* Headings */
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; break-after: avoid; }
+h1.chapter-title { font-size: 22pt; margin: 0 0 10pt; padding-bottom: 6pt; border-bottom: 0.8pt solid var(--ink); string-set: doctitle content(text); }
+.chapter { break-before: page; }
+h2 { font-size: 14pt; margin: 18pt 0 6pt; }
+h3 { font-size: 11.5pt; margin: 14pt 0 4pt; }
+h4 { font-size: 10pt; margin: 10pt 0 3pt; }
+.chapter > h2:first-of-type { margin-top: 8pt; }
+
+/* Tables */
+table { break-inside: avoid; width: 100%; border-collapse: collapse; margin: 6pt 0 12pt; font-size: 8.5pt; line-height: 1.4; }
+thead { display: table-header-group; }
+th { text-align: left; font-weight: 700; border-top: 0.8pt solid var(--ink); border-bottom: 0.6pt solid var(--ink); padding: 4pt 5pt; background: var(--tint); }
+td { border-bottom: 0.4pt solid var(--rule); padding: 3.5pt 5pt; vertical-align: top; }
+tr { break-inside: avoid; }
+tbody tr:last-child td { border-bottom: 0.8pt solid var(--ink); }
+
+/* Figures */
+figure { margin: 10pt 0 14pt; break-inside: avoid; text-align: center; }
+figure img { max-width: 100%; max-height: 205mm; }
+figure img[src$=".jpg"] { max-width: 78%; border: 0.4pt solid var(--rule); }
+figcaption { font-size: 8.5pt; font-style: italic; color: var(--muted); margin-top: 5pt; text-align: left; line-height: 1.4; }

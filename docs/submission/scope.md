@@ -1,7 +1,7 @@
-# ROOMIFY — project scope
+# Roomify — Project Scope
 
 Source: https://docs.google.com/document/d/1ClGVq5p8Bbu6OvWE6dG4NiNY-qyntfOApeWIh34wON0
-("ROOMIFY-project scope", exported 2026-10-24). Research citations are in the source doc.
+(the team's project scope document, exported 2026-10-24). Research citations are in the source doc.
 
 ## A. Problems
 
