@@ -45,6 +45,10 @@ public class DesignResult {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    // Lifecycle is owned by DesignPersistenceService via JDBC; JPA only reads it.
+    @Column(name = "status", insertable = false, updatable = false)
+    private String status;
+
     protected DesignResult() {
     }
 
@@ -61,6 +65,10 @@ public class DesignResult {
         this.currency = currency;
         this.modelName = modelName;
         this.createdAt = Instant.now();
+    }
+
+    public boolean isSucceeded() {
+        return "SUCCEEDED".equals(status);
     }
 
     public Long getId() {

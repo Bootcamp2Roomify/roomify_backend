@@ -89,7 +89,8 @@ public class RoomProjectService {
 
     @Transactional(noRollbackFor = VisionServiceException.class)
     public AnalyzeProjectResponse analyzeProject(UUID id) {
-        RoomProject project = getProject(id);
+        RoomProject project = repository.findByIdForUpdate(id)
+                .orElseThrow(() -> new NoSuchElementException("Room project not found: " + id));
 
         RoomImage activeImage = roomImageRepository
                 .findTopByProjectIdOrderByCreatedAtDesc(id)

@@ -38,12 +38,14 @@ public class DesignService {
         var started=persistence.begin(projectId,properties.getProvider(),provider.getModelName());
         try {
             DesignPlan plan=null;
+            String retryReason=null;
             for(int attempt=0;attempt<2;attempt++) {
-                String raw=provider.generateJson(prompts.systemPrompt(),prompts.userPrompt(started.snapshot(),attempt>0));
+                String raw=provider.generateJson(prompts.systemPrompt(),prompts.userPrompt(started.snapshot(),retryReason));
                 try {
-                    if(raw==null || raw.length()>100000) throw new IllegalArgumentException();
+                    if(raw==null || raw.length()>100000) throw new IllegalArgumentException("Output was empty or too large.");
                     plan=mapper.readValue(raw,DesignPlan.class);validator.validate(plan,started.snapshot());break;
-                } catch(Exception invalid) {plan=null;}
+                } catch(IllegalArgumentException invalid) {plan=null;retryReason=invalid.getMessage();
+                } catch(Exception unparseable) {plan=null;retryReason="Output was not valid JSON for the schema.";}
             }
             if(plan==null) throw new DesignFailureException("INVALID_DESIGN_PLAN",started.designId());
             persistence.succeed(started,plan);

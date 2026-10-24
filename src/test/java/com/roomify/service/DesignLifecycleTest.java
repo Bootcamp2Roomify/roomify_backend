@@ -64,7 +64,7 @@ class DesignLifecycleTest {
     String valid() { return """
         {"planVersion":"1","summary":"A practical room","designStyle":"SCANDINAVIAN",
          "actions":[{"objectId":"%s","objectClass":"bed","decision":"KEEP","type":"KEEP",
-         "instruction":"Preserve the existing bed","rationale":"Respect the saved decision"}],
+         "instruction":"Keep the existing bed in place","rationale":"Respect the saved decision"}],
          "layoutNotes":["Measurements need verification"],
          "budgetAllocation":[{"category":"storage","item":"Freestanding shelf","purpose":"More storage","estimatedCost":1000}],
          "estimatedTotalCost":1000,"currency":"TWD","warnings":[],
