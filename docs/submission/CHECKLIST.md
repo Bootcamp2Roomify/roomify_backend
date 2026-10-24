@@ -1,4 +1,4 @@
-# Submission checklist (2026-10-24, v0.9.0-rc1)
+# Submission checklist (2026-10-24, release candidate v0.9.0-rc1)
 
 The Devpost project page needs a login and the hackathon's rules page could not be read, so this maps
 the requirements from the project brief plus Devpost's standard submission form. If the hackathon has
@@ -10,12 +10,15 @@ Legend: ✅ done · 🔑 pending: requires OpenAI key · 🙋 needs the project 
 
 | Requirement | Status | Where / what remains |
 |---|---|---|
-| Working app: all 11 MVP features implemented and merged | ✅ | All three repos, `main` = v0.9.0-rc1 |
+| Working app: all 11 MVP features implemented and merged | ✅ | All three repos' `develop` |
 | Non-AI flows verified end to end in a real browser | ✅ | `roomify_frontend/tests/live` (journey, privacy, logout, CV-down) |
 | AI flows (plan, concept, suggestions, DIY) verified live | 🔑 | Run `LIVE_AI=1` live suite once the key is in `.env` |
 | Graceful behaviour without a key | ✅ | EVALUATION.md §3; `MissingAiKeyTest`, frontend tests |
-| CI green on `main` in all three repos | ✅ | GitHub Actions on each repo |
-| Release tag | ✅ v0.9.0-rc1 · 🔑 v1.0.0 | v1.0.0 after the live AI run |
+| Release PRs develop → main, CI green | ✅ | backend#40, cv#10, frontend#26 — all checks pass |
+| Merge to `main` | 🙋 | `main` requires 1 approval from someone other than the last pusher and linear history: a teammate approves, then **Squash and merge** (auto-merge is disabled in repo settings) |
+| CI green on `main` | 🙋 then ✅ | runs automatically on the squash commit |
+| Tag v0.9.0-rc1 on `main` | 🙋 | after the merges: `git tag -a v0.9.0-rc1 -m "Release candidate; AI features unverified" origin/main && git push origin v0.9.0-rc1` in each repo, then sync `main` back into `develop` (squash makes them diverge) |
+| Tag v1.0.0 | 🔑 | after the live AI run |
 | Technical report (Markdown + PDF) | ✅ draft · 🔑 final | REPORT.md / REPORT.pdf; §6.2 AI results pending |
 | Repos with README, `.env.example`, run commands | ✅ | each repo's README |
 | Repo visibility decision | ✅ | REPOS.md: all three public; no change needed |
