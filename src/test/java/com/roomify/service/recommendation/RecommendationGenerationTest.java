@@ -3,6 +3,7 @@ package com.roomify.service.recommendation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roomify.ai.AiDesignProvider;
+import com.roomify.ai.AiProviderQuotaExhaustedException;
 import com.roomify.service.DesignService;
 import com.roomify.support.TestUserSecurity;
 import org.junit.jupiter.api.AfterEach;
@@ -95,6 +96,18 @@ class RecommendationGenerationTest {
         mvc.perform(post("/api/projects/{p}/recommendations", project))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.code").value("INVALID_RECOMMENDATIONS"));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM recommendation_sets WHERE project_id = ?", Integer.class, project))
+                .isZero();
+    }
+
+    @Test
+    void exhaustedQuotaReturns503WithoutRetryingAndStoresNothing() throws Exception {
+        when(provider.generateJson(startsWith(ITEMS_PROMPT), anyString()))
+                .thenThrow(new AiProviderQuotaExhaustedException("AI quota exhausted."));
+        mvc.perform(post("/api/projects/{p}/recommendations", project))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("AI_QUOTA_EXHAUSTED"));
+        verify(provider, times(1)).generateJson(startsWith(ITEMS_PROMPT), anyString());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM recommendation_sets WHERE project_id = ?", Integer.class, project))
                 .isZero();
     }

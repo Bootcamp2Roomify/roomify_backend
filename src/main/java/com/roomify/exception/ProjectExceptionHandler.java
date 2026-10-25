@@ -1,6 +1,7 @@
 package com.roomify.exception;
 
 import com.roomify.ai.AiProviderConfigurationException;
+import com.roomify.ai.AiProviderQuotaExhaustedException;
 import com.roomify.ai.AiProviderRetryableException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -81,6 +82,17 @@ public class ProjectExceptionHandler {
                 .body(new ApiError(
                         "AI_PROVIDER_CONFIGURATION_ERROR",
                         exception.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(AiProviderQuotaExhaustedException.class)
+    public ResponseEntity<ApiError> handleAiProviderQuotaExhausted(
+            AiProviderQuotaExhaustedException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiError(
+                        "AI_QUOTA_EXHAUSTED",
+                        "AI quota exhausted. Generation is paused until the AI account is topped up."
                 ));
     }
 

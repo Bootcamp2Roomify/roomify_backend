@@ -1,6 +1,7 @@
 package com.roomify.service;
 
 import com.roomify.ai.AiDesignProvider;
+import com.roomify.ai.AiProviderQuotaExhaustedException;
 import com.roomify.ai.AiProviderRetryableException;
 import com.roomify.ai.DesignImageProvider;
 import com.roomify.ai.GeneratedDesignImage;
@@ -117,6 +118,19 @@ class PrototypeServiceTest {
         mvc.perform(get("/api/projects/{p}/designs/{d}/image/content", project, design))
                 .andExpect(status().isOk())
                 .andExpect(content().bytes(rendered));
+    }
+
+    @Test
+    void exhaustedQuotaReturnsAClearCodeAndLeavesNoAsset() throws Exception {
+        Long design = design();
+        when(imageProvider.generate(any(), anyString(), anyString(), anyString()))
+                .thenThrow(new AiProviderQuotaExhaustedException("AI quota exhausted."));
+
+        mvc.perform(post("/api/projects/{p}/designs/{d}/prototype", project, design))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("AI_QUOTA_EXHAUSTED"));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM design_assets WHERE design_result_id = ?", Integer.class, design))
+                .isZero();
     }
 
     @Test

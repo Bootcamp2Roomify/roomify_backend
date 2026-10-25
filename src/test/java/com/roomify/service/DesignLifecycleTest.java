@@ -3,6 +3,7 @@ package com.roomify.service;
 import com.roomify.support.TestUserSecurity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roomify.ai.AiDesignProvider;
+import com.roomify.ai.AiProviderQuotaExhaustedException;
 import com.roomify.dto.design.*;
 import com.roomify.exception.*;
 import com.roomify.storage.*;
@@ -98,6 +99,14 @@ class DesignLifecycleTest {
             .andExpect(jsonPath("$.code").value("DESIGN_GENERATION_FAILED"));
         var result=queries.latest(project);assertThat(result.status()).isEqualTo("FAILED");assertThat(result.plan()).isNull();
         assertThat(jdbc.queryForObject("SELECT row_to_json(r)::text FROM design_requests r WHERE request_id=?",String.class,result.requestId())).doesNotContain("SECRET_TOKEN","signed.example");
+        assertThat(jdbc.queryForObject("SELECT status FROM room_projects WHERE project_id=?",String.class,project)).isEqualTo("PREFERENCES_READY");
+    }
+    @Test void exhaustedQuotaIsNotRetriedAndPersistsAClearCode() throws Exception {
+        when(provider.generateJson(anyString(),anyString())).thenThrow(new AiProviderQuotaExhaustedException("AI quota exhausted."));
+        mvc.perform(post("/api/projects/{id}/designs",project)).andExpect(status().isServiceUnavailable())
+            .andExpect(jsonPath("$.code").value("AI_QUOTA_EXHAUSTED"));
+        verify(provider,times(1)).generateJson(anyString(),anyString());
+        var result=queries.latest(project);assertThat(result.status()).isEqualTo("FAILED");assertThat(result.errorCode()).isEqualTo("AI_QUOTA_EXHAUSTED");
         assertThat(jdbc.queryForObject("SELECT status FROM room_projects WHERE project_id=?",String.class,project)).isEqualTo("PREFERENCES_READY");
     }
     @Test void malformedPlanRetriesOnceThenPersistsFailure() {
