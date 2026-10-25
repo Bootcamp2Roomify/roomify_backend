@@ -101,7 +101,8 @@ class PrototypeServiceTest {
         verify(imageProvider).generate(sent.capture(), eq("room.png"), eq("image/png"), prompt.capture());
         assertThat(sent.getValue()).isEqualTo(original);
         assertThat(prompt.getValue())
-                .contains("Keep the same camera position")
+                .contains("Preserve the existing room architecture")
+                .contains("camera viewpoint")
                 .contains("Keep the existing bed exactly where it is")
                 .contains("sage, cream")
                 .contains("rented room")
