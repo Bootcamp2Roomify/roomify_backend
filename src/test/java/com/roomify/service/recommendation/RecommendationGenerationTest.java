@@ -60,26 +60,40 @@ class RecommendationGenerationTest {
     @Test
     void generatesSetWithServerComputedTotalsAndPlacement() throws Exception {
         items(item("Desk lamp", "39.999", "true", "On the desk, left of the monitor", alt("Clip lamp", "19.50")),
-                item("Storage basket", "25", "false", null, "null"));
+                item("Storage basket", "25", "false", null, "null"), FILLER);
 
         mvc.perform(post("/api/projects/{p}/recommendations", project))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.estimatedTotal").value(65.00))
-                .andExpect(jsonPath("$.remainingBudget").value(235.00))
+                .andExpect(jsonPath("$.estimatedTotal").value(75.00))
+                .andExpect(jsonPath("$.remainingBudget").value(225.00))
                 .andExpect(jsonPath("$.items[0].estimatedPrice").value(40.00))
                 .andExpect(jsonPath("$.items[0].placement").value("On the desk, left of the monitor"))
                 .andExpect(jsonPath("$.items[0].cheaperAlternative.estimatedPrice").value(19.5))
                 .andExpect(jsonPath("$.items[1].placement").doesNotExist());
         mvc.perform(get("/api/projects/{p}/recommendations", project))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items.length()").value(2));
+                .andExpect(jsonPath("$.items.length()").value(3));
+    }
+
+    @Test
+    void newSetsNeedAtLeastThreeItems() throws Exception {
+        when(provider.generateJson(startsWith(ITEMS_PROMPT), anyString()))
+                .thenReturn(itemsJson(item("Desk lamp", "40", "false", "On the desk", "null"), FILLER))
+                .thenReturn(itemsJson(item("Desk lamp", "40", "false", "On the desk", "null"), FILLER, FILLER_2));
+
+        mvc.perform(post("/api/projects/{p}/recommendations", project))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.items.length()").value(3));
+        ArgumentCaptor<String> prompts = ArgumentCaptor.forClass(String.class);
+        verify(provider, times(2)).generateJson(startsWith(ITEMS_PROMPT), prompts.capture());
+        assertThat(prompts.getAllValues().get(1)).contains("Return between 3 and 6 recommended items");
     }
 
     @Test
     void retriesWithBudgetFeedbackThenStores() throws Exception {
         when(provider.generateJson(startsWith(ITEMS_PROMPT), anyString()))
-                .thenReturn(itemsJson(item("Sofa", "900", "false", "Under the window", "null")))
-                .thenReturn(itemsJson(item("Floor cushion", "60", "false", "Under the window", "null")));
+                .thenReturn(itemsJson(item("Sofa", "900", "false", "Under the window", "null"), FILLER, FILLER_2))
+                .thenReturn(itemsJson(item("Floor cushion", "60", "false", "Under the window", "null"), FILLER, FILLER_2));
 
         mvc.perform(post("/api/projects/{p}/recommendations", project))
                 .andExpect(status().isCreated())
@@ -103,7 +117,7 @@ class RecommendationGenerationTest {
     void rejectsRentalDamagingItems() throws Exception {
         UUID rental = seed(true);
         when(provider.generateJson(startsWith(ITEMS_PROMPT), anyString()))
-                .thenReturn(itemsJson(item("Shelves that drill into the wall", "50", "false", "Wall", "null")));
+                .thenReturn(itemsJson(item("Shelves that drill into the wall", "50", "false", "Wall", "null"), FILLER, FILLER_2));
         mvc.perform(post("/api/projects/{p}/recommendations", rental))
                 .andExpect(status().isServiceUnavailable());
         ArgumentCaptor<String> prompts = ArgumentCaptor.forClass(String.class);
@@ -122,7 +136,7 @@ class RecommendationGenerationTest {
 
     @Test
     void generatesSafeDiyGuideOnceAndRejectsUnsafeOrIneligible() throws Exception {
-        items(item("Desk lamp", "40", "true", "On the desk", "null"), item("Rug", "80", "false", "Floor", "null"));
+        items(item("Desk lamp", "40", "true", "On the desk", "null"), item("Rug", "80", "false", "Floor", "null"), FILLER);
         JsonNode set = mapper.readTree(mvc.perform(post("/api/projects/{p}/recommendations", project))
                 .andReturn().getResponse().getContentAsString());
         String lamp = set.at("/items/0/itemId").asText();
@@ -148,7 +162,7 @@ class RecommendationGenerationTest {
 
     @Test
     void unsafeDiyGuideIsNeverStored() throws Exception {
-        items(item("Pendant light", "60", "true", "Above the desk", "null"));
+        items(item("Pendant light", "60", "true", "Above the desk", "null"), FILLER, FILLER_2);
         String light = mapper.readTree(mvc.perform(post("/api/projects/{p}/recommendations", project))
                 .andReturn().getResponse().getContentAsString()).at("/items/0/itemId").asText();
         when(provider.generateJson(startsWith(DIY_PROMPT), anyString()))
@@ -190,6 +204,10 @@ class RecommendationGenerationTest {
         designs.generate(id);
         return id;
     }
+
+    // New sets need 3-6 items; these keep each test's own items as the subject.
+    private static final String FILLER = item("Adhesive wall hooks", "10", "false", "By the door", "null");
+    private static final String FILLER_2 = item("Cable organiser", "8", "false", "Under the desk", "null");
 
     private void items(String... items) {
         when(provider.generateJson(startsWith(ITEMS_PROMPT), anyString())).thenReturn(itemsJson(items));
