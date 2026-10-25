@@ -4,9 +4,15 @@ import com.roomify.config.AiProperties;
 import com.roomify.config.ImageGenerationProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
 class OpenAiDesignImageProviderTest {
 
@@ -98,5 +104,32 @@ class OpenAiDesignImageProviderTest {
         ))
                 .isInstanceOf(AiProviderConfigurationException.class)
                 .hasMessage("AI_IMAGE_QUALITY is required when AI_PROVIDER=openai.");
+    }
+
+    @Test
+    void exhaustedQuotaFailsImmediatelyWithAClearError() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://api.test/v1");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        var http = new OpenAiDesignImageProvider(builder.build(), aiProperties, imageProperties);
+        server.expect(requestTo("https://api.test/v1/images/edits"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":{\"type\":\"insufficient_quota\",\"code\":\"insufficient_quota\"}}"));
+        assertThatThrownBy(() -> http.generate(new byte[]{1, 2, 3}, "room.png", "image/png", "Keep the bed."))
+                .isInstanceOf(AiProviderQuotaExhaustedException.class)
+                .hasMessage("AI quota exhausted.");
+        server.verify();
+    }
+
+    @Test
+    void rateLimitStaysRetryable() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://api.test/v1");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        var http = new OpenAiDesignImageProvider(builder.build(), aiProperties, imageProperties);
+        server.expect(requestTo("https://api.test/v1/images/edits"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":{\"type\":\"requests\",\"code\":\"rate_limit_exceeded\"}}"));
+        assertThatThrownBy(() -> http.generate(new byte[]{1, 2, 3}, "room.png", "image/png", "Keep the bed."))
+                .isInstanceOf(AiProviderRetryableException.class);
+        server.verify();
     }
 }

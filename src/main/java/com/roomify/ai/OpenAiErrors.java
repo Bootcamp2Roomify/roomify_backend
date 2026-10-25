@@ -20,4 +20,17 @@ final class OpenAiErrors {
             return "unparseable error body";
         }
     }
+
+    /** OpenAI answers 429 both for rate limits (retryable) and for an account with no credit left (not). */
+    static boolean isQuotaExhausted(String body) {
+        try {
+            JsonNode error = MAPPER.readTree(body == null ? "" : body).path("error");
+            String type = error.path("type").asText("");
+            String code = error.path("code").asText("");
+            return "insufficient_quota".equals(type) || "insufficient_quota".equals(code)
+                    || "credit_balance_exhausted".equals(code);
+        } catch (Exception unreadable) {
+            return false;
+        }
+    }
 }

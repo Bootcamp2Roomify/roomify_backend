@@ -104,6 +104,43 @@ class OpenAiDesignProviderTest {
     }
 
     @Test
+    void exhaustedQuotaFailsImmediatelyAndIsNotRetried() {
+        var properties = properties("gpt-6-luna");
+        properties.setMaxRetries(2);
+        var fixture = fixture(properties);
+        fixture.server().expect(requestTo("https://api.test/v1/chat/completions"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":{\"type\":\"insufficient_quota\",\"code\":\"credit_balance_exhausted\",\"message\":\"x\"}}"));
+        assertThatThrownBy(() -> fixture.provider().generateJson("system", "user"))
+                .isInstanceOf(AiProviderQuotaExhaustedException.class)
+                .hasMessage("AI quota exhausted.");
+        fixture.server().verify();
+    }
+
+    @Test
+    void rateLimitIsStillRetried() {
+        var properties = properties("gpt-4o-mini");
+        properties.setMaxRetries(1);
+        var fixture = fixture(properties);
+        fixture.server().expect(requestTo("https://api.test/v1/chat/completions"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":{\"type\":\"requests\",\"code\":\"rate_limit_exceeded\"}}"));
+        fixture.server().expect(requestTo("https://api.test/v1/chat/completions"))
+                .andRespond(withSuccess(OK, MediaType.APPLICATION_JSON));
+        assertThat(fixture.provider().generateJson("system", "user")).isEqualTo("{\"ok\":true}");
+        fixture.server().verify();
+    }
+
+    @Test
+    void recognisesQuotaErrorBodies() {
+        assertThat(OpenAiErrors.isQuotaExhausted("{\"error\":{\"type\":\"insufficient_quota\",\"code\":\"insufficient_quota\"}}")).isTrue();
+        assertThat(OpenAiErrors.isQuotaExhausted("{\"error\":{\"type\":\"-\",\"code\":\"credit_balance_exhausted\"}}")).isTrue();
+        assertThat(OpenAiErrors.isQuotaExhausted("{\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\"}}")).isFalse();
+        assertThat(OpenAiErrors.isQuotaExhausted("not json")).isFalse();
+        assertThat(OpenAiErrors.isQuotaExhausted(null)).isFalse();
+    }
+
+    @Test
     void placeholderKeyFailsBeforeAnyNetworkCall() {
         var properties = properties("gpt-4o-mini");
         properties.setApiKey("your_openai_api_key");

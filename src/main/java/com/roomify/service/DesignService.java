@@ -52,6 +52,7 @@ public class DesignService {
         } catch(RuntimeException error) {
             String code=error instanceof DesignFailureException?"INVALID_DESIGN_PLAN"
                 :error instanceof AiProviderConfigurationException?"AI_CONFIGURATION_ERROR"
+                :error instanceof AiProviderQuotaExhaustedException?"AI_QUOTA_EXHAUSTED"
                 :error instanceof AiProviderRetryableException?"AI_PROVIDER_UNAVAILABLE"
                 :error instanceof InvalidStateException?"DESIGN_INPUT_CHANGED":"DESIGN_GENERATION_FAILED";
             persistence.fail(started,code);
