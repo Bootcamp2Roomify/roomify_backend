@@ -2,6 +2,7 @@ package com.roomify.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roomify.ai.AiProviderConfigurationException;
+import com.roomify.ai.AiProviderQuotaExhaustedException;
 import com.roomify.ai.AiProviderRetryableException;
 import com.roomify.ai.DesignImageProvider;
 import com.roomify.ai.GeneratedDesignImage;
@@ -68,6 +69,8 @@ public class PrototypeService {
                     contentType, prompts.build(design.plan(), snapshot));
         } catch (AiProviderConfigurationException misconfigured) {
             throw new DesignFailureException("AI_CONFIGURATION_ERROR", designId);
+        } catch (AiProviderQuotaExhaustedException exhausted) {
+            throw new DesignFailureException("AI_QUOTA_EXHAUSTED", designId);
         } catch (AiProviderRetryableException unavailable) {
             throw new DesignFailureException("AI_PROVIDER_UNAVAILABLE", designId);
         } catch (RuntimeException failed) {

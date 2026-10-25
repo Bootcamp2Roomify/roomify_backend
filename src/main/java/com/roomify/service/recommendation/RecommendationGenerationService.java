@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roomify.ai.AiDesignProvider;
 import com.roomify.ai.AiProviderConfigurationException;
+import com.roomify.ai.AiProviderQuotaExhaustedException;
 import com.roomify.ai.AiProviderRetryableException;
 import com.roomify.config.AiProperties;
 import com.roomify.dto.ProjectPreferencesResponse;
@@ -121,6 +122,8 @@ public class RecommendationGenerationService {
             return raw;
         } catch (AiProviderConfigurationException misconfigured) {
             throw new RecommendationFailureException("AI_CONFIGURATION_ERROR");
+        } catch (AiProviderQuotaExhaustedException exhausted) {
+            throw new RecommendationFailureException("AI_QUOTA_EXHAUSTED");
         } catch (AiProviderRetryableException unavailable) {
             throw new RecommendationFailureException("AI_PROVIDER_UNAVAILABLE");
         }
@@ -128,8 +131,9 @@ public class RecommendationGenerationService {
 
     RecommendationSet toSet(String raw, ProjectPreferencesResponse saved) {
         GeneratedItems generated = read(raw, GeneratedItems.class);
-        if (generated.items() == null || generated.items().isEmpty() || generated.items().size() > 6) {
-            throw new IllegalArgumentException("Return between 1 and 6 items.");
+        if (generated.items() == null || generated.items().size() < 3 || generated.items().size() > 6) {
+            throw new IllegalArgumentException("Return between 3 and 6 recommended items."
+            );
         }
         List<RecommendationItem> items = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;

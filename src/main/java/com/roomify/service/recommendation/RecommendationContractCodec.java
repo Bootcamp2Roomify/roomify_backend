@@ -66,6 +66,7 @@ public class RecommendationContractCodec {
         require(set != null);
         versionCurrency(set.schemaVersion(), set.currency());
         money(set.budget()); money(set.estimatedTotal()); money(set.remainingBudget());
+        // Only new generations must have 3-6 items (RecommendationGenerationService); saved sets with fewer stay readable.
         require(set.items() != null && set.items().size() <= 6);
         BigDecimal total = BigDecimal.ZERO;
         for (var item : set.items()) {

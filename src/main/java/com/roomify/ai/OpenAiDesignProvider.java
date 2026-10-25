@@ -145,6 +145,11 @@ public class OpenAiDesignProvider implements AiDesignProvider {
                 throw new AiProviderConfigurationException("OpenAI rejected the configured API key.");
             }
 
+            // No credit left: retrying cannot succeed until the owner tops up the account.
+            if (statusCode == 429 && OpenAiErrors.isQuotaExhausted(exception.getResponseBodyAsString())) {
+                throw new AiProviderQuotaExhaustedException("AI quota exhausted.");
+            }
+
             if (statusCode == 408 || statusCode == 429 || statusCode >= 500) {
                 throw new AiProviderRetryableException(
                         "OpenAI is temporarily unavailable. Please try again.",
