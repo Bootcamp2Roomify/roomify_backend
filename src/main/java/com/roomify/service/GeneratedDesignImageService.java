@@ -23,6 +23,10 @@ public class GeneratedDesignImageService {
         this.storage=storage;this.persistence=persistence;this.queries=queries;this.jdbc=jdbc;this.maxBytes=maxBytes;
     }
     public GeneratedAsset store(UUID projectId,Long designId,String contentType,byte[] bytes) {
+        return store(projectId,designId,contentType,bytes,"ai");
+    }
+    /** source is "ai" for provider output and "demo" for a bundled demo-library image. */
+    public GeneratedAsset store(UUID projectId,Long designId,String contentType,byte[] bytes,String source) {
         // Check ownership before processing the provider bytes.
         queries.get(projectId,designId);
         int[] dimensions=dimensions(contentType,bytes);
@@ -33,7 +37,7 @@ public class GeneratedDesignImageService {
             StoredObject stored=storage.upload(key,contentType,bytes.length,new ByteArrayInputStream(bytes));
             if(stored==null || !key.equals(stored.key()) || stored.bucket()==null || stored.bucket().isBlank())
                 throw new IllegalStateException("Invalid stored object metadata.");
-            persistence.complete(designId,stored,contentType,bytes.length,dimensions[0],dimensions[1]);
+            persistence.complete(designId,stored,contentType,bytes.length,dimensions[0],dimensions[1],source);
         } catch(RuntimeException error) {
             // A partial write or database failure must not expose a successful image.
             try {storage.delete(key);} catch(RuntimeException cleanupFailure) { /* Safe prefix permits later orphan cleanup. */ }

@@ -34,7 +34,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /** ROOM-93/95: generate, store and serve the visual prototype for a saved design. */
-@SpringBootTest
+// These tests cover the error paths, so the demo-library fallback is off.
+@SpringBootTest(properties = "ai.demo-fallback=false")
 @AutoConfigureMockMvc
 class PrototypeServiceTest {
 
