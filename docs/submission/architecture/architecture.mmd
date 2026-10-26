@@ -15,11 +15,11 @@ flowchart TB
     gen["Generation and guardrails<br/>plan · concept · suggestions · DIY<br/>budget, decision, rental and safety checks"]
   end
 
-  cv["Roomify CV service · FastAPI<br/>YOLO11n: bed · chair · sofa · table · tv · plant"]
+  cv["Roomify CV service · FastAPI<br/>YOLO11n (ONNX Runtime): bed · chair · sofa ·<br/>table · tv · plant"]
   llm["OpenAI gpt-4o-mini<br/>JSON plans, suggestions, DIY"]
   img["OpenAI gpt-image-2.5-sunburst<br/>edits the user's photo"]
   pg[("PostgreSQL 17<br/>projects, detections, decisions,<br/>designs, suggestions, guides")]
-  store[("Object storage · AWS S3<br/>room photos, concepts")]
+  store[("Photo storage · Postgres table<br/>(live) or AWS S3<br/>room photos, concepts")]
 
   user -- HTTPS --> pages
   pages --> bridge

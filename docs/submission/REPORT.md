@@ -5,7 +5,8 @@ Code: [backend](https://github.com/Bootcamp2Roomify/roomify_backend) ·
 [CV service](https://github.com/Bootcamp2Roomify/roomify_cv) ·
 [frontend](https://github.com/Bootcamp2Roomify/roomify_frontend)
 
-> **Release v1.0.0 (2026-10-26).** Everything below is implemented, merged and tested. The OpenAI
+> **Release v1.0.1 (2026-10-26) · live at <https://roomify-rooms.vercel.app>.** Everything below is
+> implemented, merged, tested and deployed (Vercel + Neon, free plans; DEPLOYMENT.md). The OpenAI
 > account was unusable at submission (one key rejected with 401, the other out of credit with 429), so
 > the submitted build runs in **demo mode**: AI features return pre-generated results from a bundled
 > demo library, clearly labelled "Demo" in the app. AI quality, latency, cost and budget-compliance
@@ -67,13 +68,13 @@ must pass deterministic validation before it is stored.
 `room_images` → `detected_objects` (stable UUID, source CV/MANUAL, active flag) → `furniture_decisions`;
 `project_preferences`; `design_requests` (immutable input snapshot, provider, prompt version) →
 `design_results` (plan JSON, status, error code) → `design_assets` (concept image);
-`recommendation_sets` → `recommendation_items` → `recommendation_diy_guides`. Ten Flyway migrations.
+`recommendation_sets` → `recommendation_items` → `recommendation_diy_guides`. Twelve Flyway migrations.
 
 ## 4. Models and providers
 
 | Task | Model | Why | Settings |
 |---|---|---|---|
-| Furniture detection | Ultralytics **YOLO11n**, COCO-pretrained | Runs on CPU in ~32 ms, 5 MB, no training needed | confidence ≥ 0.25; six classes kept: bed, chair, sofa, table, tv, plant |
+| Furniture detection | Ultralytics **YOLO11n**, COCO-pretrained; served live on ONNX Runtime | Runs on CPU in ~32 ms, 5 MB, no training needed; the ONNX export needs no torch and fits a serverless function | confidence ≥ 0.25; six classes kept: bed, chair, sofa, table, tv, plant |
 | Plan, suggestions, DIY | OpenAI **gpt-4o-mini** (Chat Completions, `json_object`) | Cheapest model that follows long JSON schemas | temperature 0.1, ≤ 4000 output tokens, 1 corrective retry |
 | Visual concept | OpenAI **gpt-image-2.5-sunburst** (`images/edits`) | Edits the user's real photo; OpenAI's replacement for the retired `gpt-image-1`, positioned for precise edits (not yet called live) | 1024×1024, quality `low` |
 
@@ -140,12 +141,13 @@ and are marked `source: "demo"`. Verified with fallback off and no key: every AI
 
 | Suite | Result (develop, 2026-10-26) |
 |---|---|
-| Backend JUnit (Postgres 17) | 183 passed |
-| CV pytest | 21 passed |
-| Frontend Vitest | 233 passed |
+| Backend JUnit (Postgres 17) | 186 passed |
+| CV pytest | 22 passed on torch, 22 on ONNX Runtime |
+| Frontend Vitest | 235 passed |
 | Playwright, stubbed API, chromium + mobile | 39 passed |
 | Playwright, fake Spring API through Next | 6 passed |
 | Playwright, **real stack**, demo mode | full journey incl. all AI steps, privacy, logout, CV-down fallback passed |
+| Playwright, **live deployment** (roomify-rooms.vercel.app), demo mode | journey incl. visual concept, privacy, logout passed; journey also passed with a 9.7 MB photo |
 
 CI runs on every push and PR in all three repositories. Secret scan of all history (including
 unreachable objects): no secrets.
@@ -160,6 +162,8 @@ unreachable objects): no secrets.
 - **Prices are model estimates**, not retailer data; there is no live shopping API.
 - **Rental and safety checks are keyword-based** and cannot certify a lease or a DIY step as safe.
 - **One room, one photo** per project (as scoped).
+- **Cold starts on the free hosting.** The API scales to zero after 5 idle minutes; the next request
+  waits about 10–20 s.
 - **Provider dependence.** Two of three models changed status during the build; defaults may need
   updating again. The text model's deprecation date (2027-01-14) is documented.
 - **AI features unverified live.** Plan, concept, suggestion and DIY generation have only run against

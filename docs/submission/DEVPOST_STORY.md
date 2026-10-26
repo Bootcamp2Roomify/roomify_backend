@@ -4,6 +4,7 @@ Paste into the Devpost form. Edit freely; numbers are only those measured in EVA
 
 **Name:** Roomify
 **Tagline:** Redesign the room you actually have — on a student budget, in a rental, keeping what you own.
+**Try it out:** <https://roomify-rooms.vercel.app> (demo mode; the first request after a few idle minutes takes 10–20 s)
 
 ## Inspiration
 Inspiration sites show other people's rooms. Students and renters can't picture changes in their own
@@ -19,7 +20,8 @@ cheaper alternatives, and beginner DIY guides with safety notes. Everything is s
 
 ## How we built it
 Next.js 15 frontend; Spring Boot 3.5 API with PostgreSQL 17; a FastAPI service running YOLO11n for
-detection; OpenAI for plans, suggestions and DIY (JSON) and for editing the room photo. Generated output
+detection (on ONNX Runtime in production, so it fits a serverless function); all three run on Vercel,
+the API as a container, with Postgres on Neon; OpenAI for plans, suggestions and DIY (JSON) and for editing the room photo. Generated output
 is treated as untrusted: the server checks decisions, budget arithmetic, rental restrictions and DIY
 safety before anything is saved, with one corrective retry.
 
@@ -46,4 +48,4 @@ An interior-specific detector (desks, wardrobes, shelves, lamps), multiple photo
 search with second-hand options, concept variations and a follow-up chat.
 
 **Built with:** next.js, react, typescript, tailwindcss, spring-boot, java, postgresql, flyway, fastapi,
-python, yolo, ultralytics, openai, aws-s3, playwright, github-actions
+python, yolo, ultralytics, onnx-runtime, openai, vercel, neon, docker, playwright, github-actions

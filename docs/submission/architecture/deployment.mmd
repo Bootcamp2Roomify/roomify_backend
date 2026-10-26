@@ -1,8 +1,7 @@
-%% Roomify proposed deployment (not deployed). Rendered by docs/submission/build.sh.
+%% Roomify live deployment (2026-10-26). Rendered by docs/submission/build.sh.
 flowchart LR
-  B["Browser"] -- HTTPS --> V["Vercel (Hobby)<br/>Roomify frontend"]
-  V -- "HTTPS + Bearer token" --> A["Fly.io app roomify-api<br/>Roomify API · 1 GB"]
-  A -- "private network only<br/>(no public port)" --> C["Fly.io app roomify-cv<br/>Roomify CV service · 1 GB"]
-  A --> N[("Neon Postgres<br/>Free plan")]
-  A --> S[("AWS S3 bucket<br/>(existing)")]
-  A --> O["OpenAI API"]
+  B["Browser"] -- HTTPS --> V["Vercel project roomify-frontend<br/>Next.js · roomify-rooms.vercel.app"]
+  V -- "HTTPS + session JWT" --> A["Vercel project roomify-api<br/>Spring Boot container (Container Runtime)"]
+  A -- "HTTPS + bearer token" --> C["Vercel project roomify-cv<br/>FastAPI + YOLO11n on ONNX Runtime"]
+  A -- "JDBC (TLS)" --> N[("Neon Postgres (Free)<br/>data + photos (stored_objects)")]
+  A -. "AI_DEMO_MODE=true:<br/>bundled demo library" .-> O["OpenAI API<br/>(not called in demo mode)"]
