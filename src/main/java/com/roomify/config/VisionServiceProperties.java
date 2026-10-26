@@ -11,6 +11,8 @@ public class VisionServiceProperties {
     private Duration connectTimeout = Duration.ofSeconds(2);
     private Duration readTimeout = Duration.ofSeconds(10);
     private String analysisPath = "/v1/analyze";
+    /** Sent as a bearer token when set, for a CV service reachable from the internet. */
+    private String apiToken;
 
     public String getBaseUrl() {
         return baseUrl;
@@ -42,5 +44,13 @@ public class VisionServiceProperties {
 
     public void setAnalysisPath(String analysisPath) {
         this.analysisPath = analysisPath;
+    }
+
+    public String getApiToken() {
+        return apiToken;
+    }
+
+    public void setApiToken(String apiToken) {
+        this.apiToken = apiToken;
     }
 }

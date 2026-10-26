@@ -1,0 +1,5 @@
+# Only what Dockerfile.vercel needs; keeps docs, videos and build output out of the upload.
+/*
+!/Dockerfile.vercel
+!/pom.xml
+!/src

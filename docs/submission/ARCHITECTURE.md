@@ -14,7 +14,7 @@ request flows through them, what is stored, and how privacy is enforced.
 | Roomify frontend | Next.js 15.5, React 19, TypeScript, Tailwind CSS | Pages for the whole journey; same-origin route handlers (`/api/*`) that keep the access token in an httpOnly cookie and forward it to the API as a Bearer token |
 | Roomify API | Spring Boot 3.5, Java 21 | Accounts and ownership, project workflow, image storage, calls to the CV service and OpenAI, and all validation of generated output |
 | Roomify CV service | FastAPI, Ultralytics YOLO11n | Detects six furniture classes in a photo; reachable only by the API |
-| PostgreSQL 17 | Flyway migrations V1–V10 | Users, projects, detections, decisions, preferences, design history, suggestions, DIY guides |
+| PostgreSQL 17 | Flyway migrations V1–V12 | Users, projects, detections, decisions, preferences, design history, suggestions, DIY guides |
 | Object storage | AWS S3 (local disk in development) | Original room photos and generated concept images |
 | OpenAI API | Chat Completions (`gpt-4o-mini`), Images edits (`gpt-image-2.5-sunburst`) | Redesign plans, suggestions and DIY guides as JSON; the visual concept |
 
@@ -60,21 +60,23 @@ deactivated, so design history stays explainable. Money is stored as `NUMERIC(12
 | Token handling | Stored only in an httpOnly, SameSite=Lax cookie (Secure in production) set by the frontend's route handlers |
 | Authorisation | One rule covers every `/api/projects/{id}/**` route; another user's project returns the same 404 as a missing one |
 | Generated content | Treated as untrusted input; validated before storage; provider error messages never shown or logged |
-| CV service | No public address; its `image_url` input rejects non-public targets (SSRF) and does not follow redirects |
+| CV service | Detection endpoints require a bearer token known only to the backend (it is publicly reachable on Vercel); its `image_url` input rejects non-public targets (SSRF) and does not follow redirects |
 | Secrets | Only `.env.example` files in git; full history scanned with no findings |
 
-## Deployment topology (proposed)
+## Deployment topology (live)
 
-![Proposed Roomify deployment: Vercel for the frontend, Fly.io for the API and a private CV service, Neon Postgres and the existing S3 bucket.](architecture/deployment.png)
+![Roomify live deployment: three Vercel projects (Next.js frontend, Spring Boot container, FastAPI CV function) and Neon Postgres.](architecture/deployment.png)
 
-This topology is approved and configured but not yet deployed (DEPLOYMENT.md has the blockers). Costs, steps and risks are in the Deployment
-document.
+Live at <https://roomify-rooms.vercel.app> on free plans with no payment card: the Next.js frontend, the
+Spring Boot API (Vercel Container Runtime) and the CV service (Vercel Python Function, YOLO11n on ONNX
+Runtime) are three Vercel projects; Postgres on Neon holds the data and the photos. Reasons, cold-start
+behaviour, steps and the Fly.io alternative are in the Deployment document.
 
 ## Architectural decisions
 
 | Decision | Reason |
 |---|---|
-| Three services instead of one | Keeps PyTorch out of the JVM host, lets the CV service stay private, and lets each part scale or be replaced independently |
+| Three services instead of one | Keeps the vision runtime out of the JVM host and lets each part scale, deploy or be replaced independently (the CV service moved from torch to ONNX Runtime for hosting without touching the backend) |
 | Backend-for-frontend bridge in Next.js | The token never reaches browser JavaScript; no CORS surface on the API |
 | "The model proposes, the server disposes" | LLM output is checked by deterministic code before it is stored or shown |
 | Immutable input snapshots | The concept always matches its plan; changed inputs mid-generation are detected |

@@ -1,0 +1,31 @@
+# Vercel runs this image as a Function (Fluid Compute, 2 GB / 1 vCPU on Hobby): one stateless
+# instance per load, scaled to zero after 5 idle minutes. The backend keeps no in-process state,
+# stores files in Postgres (STORAGE_TYPE=database) and calls the CV service over HTTPS.
+FROM maven:3.9.16-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn -B dependency:go-offline
+COPY src ./src
+RUN mvn -B package -DskipTests && cp target/roomify-backend-*.jar app.jar
+
+FROM eclipse-temurin:21.0.12_8-jre
+WORKDIR /app
+RUN useradd --create-home --uid 10001 roomify
+COPY --from=build /app/app.jar /tmp/app.jar
+# Vercel gives a cold container 28 s to open its port. A class-data-sharing archive from a
+# training run (context refresh only, no database) cuts Spring's startup by about a third.
+RUN java -Djarmode=tools -jar /tmp/app.jar extract --destination /app/extracted \
+    && java -XX:ArchiveClassesAtExit=/app/app.jsa -Dspring.context.exit=onRefresh \
+        -Dspring.flyway.enabled=false -Dspring.jpa.hibernate.ddl-auto=none \
+        -Dspring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=false \
+        -Dspring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect \
+        -DDB_USERNAME=x -DDB_PASSWORD=x -DJWT_SECRET=training-only-secret-not-used-at-runtime-0123456789 \
+        -jar /app/extracted/app.jar \
+    && rm /tmp/app.jar
+USER roomify
+# C1-only JIT and the serial GC shorten cold starts on 1 vCPU; heap is sized to the 2 GB instance.
+ENV PORT=8080 \
+    STORAGE_TYPE=database \
+    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=60 -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -XX:SharedArchiveFile=/app/app.jsa"
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/extracted/app.jar"]
