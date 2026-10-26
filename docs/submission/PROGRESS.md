@@ -170,3 +170,19 @@ Docs in this folder: REPORT.md, EVALUATION.md (detection measured), DEPENDENCIES
 - Product name "Roomify" everywhere: UI wordmark (frontend#27), scope title, diagrams, video slates,
   file names. Clips, gallery and draft video re-recorded with the corrected UI.
 - Tools installed with Homebrew for the build/QA: pandoc 3.12.1, LibreOffice (DOCX layout check).
+
+## 2026-10-26 — demo mode and v1.0.0
+
+- OpenAI unusable at submission: one key `401 invalid_api_key`, the other `429 credit_balance_exhausted`.
+- Demo mode (backend#52): `AI_DEMO_MODE=true` serves plan, concept, suggestions and DIY from a bundled
+  library (four room-purpose cases, CC0 photos); `AI_DEMO_FALLBACK=true` (default) answers from it when a
+  live call fails. Results are marked `source: "demo"`; 25 new tests. Frontend labels them "Demo"
+  (frontend#33).
+- Live suite passes end to end in demo mode; fixed two stale live-test steps (a click that waited
+  forever for a missing button, and the dashboard link after a budget edit).
+- Screenshots of every main screen at desktop and phone width (`screenshots/`), gallery images 6–8,
+  final video cut with the AI scenes recorded in demo mode (`video/Roomify - Demo.mp4`, 3:24).
+- Docs: every "Pending: requires OpenAI key" row now reads "Demo mode (pre-generated results)"; no AI
+  latency or cost numbers are reported.
+- Deployment still blocked on Fly.io billing and a bucket-scoped AWS key.
+

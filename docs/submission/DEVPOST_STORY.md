@@ -26,7 +26,11 @@ safety before anything is saved, with one corrective retry.
 ## Challenges we ran into
 Detection is imperfect (and COCO has no desk or wardrobe class), so review and manual entry became core
 features. Making LLM output trustworthy needed strict schemas and server-side validation. Midway, OpenAI
-retired the image model we had built on, so model choice became configuration.
+retired the image model we had built on, so model choice became configuration. At submission our OpenAI
+account had no usable credit, so we added a demo mode: the build you can try returns pre-generated plans,
+an example concept photo for the room type, suggestions and DIY guides from a bundled library — fitted to
+your furniture decisions and budget, passing the same server checks, and labelled "Demo" in the app. With a
+funded key the same build calls OpenAI again, and falls back to the demo library if a call fails.
 
 ## Accomplishments that we're proud of
 Privacy by design (another user's room is indistinguishable from a missing one), budget numbers computed
