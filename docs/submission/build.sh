@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 SUB=$PWD; B=$SUB/tooling; C=$B/.cache; OUT=$SUB/final
-export SOURCE_DATE_EPOCH=1792800000  # 2026-10-24: stable DOCX metadata
+export SOURCE_DATE_EPOCH=1792972800  # 2026-10-26: stable DOCX metadata
 
 need() { command -v "$1" >/dev/null || { echo "missing: $1" >&2; exit 1; }; }
 need pandoc; need node; need python3; need curl; need unzip

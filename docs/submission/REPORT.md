@@ -5,10 +5,12 @@ Code: [backend](https://github.com/Bootcamp2Roomify/roomify_backend) ·
 [CV service](https://github.com/Bootcamp2Roomify/roomify_cv) ·
 [frontend](https://github.com/Bootcamp2Roomify/roomify_frontend)
 
-> **Draft — release candidate v0.9.0-rc1 (2026-10-24).** Everything below is implemented, merged and
-> tested. AI quality, latency, cost and budget-compliance results (§6.2) are **pending: requires OpenAI
-> key** — no key was available, so they are left empty rather than estimated, and the AI features have
-> not yet been run against the live API.
+> **Release v1.0.0 (2026-10-26).** Everything below is implemented, merged and tested. The OpenAI
+> account was unusable at submission (one key rejected with 401, the other out of credit with 429), so
+> the submitted build runs in **demo mode**: AI features return pre-generated results from a bundled
+> demo library, clearly labelled "Demo" in the app. AI quality, latency, cost and budget-compliance
+> results (§6.2) are therefore **Demo mode (pre-generated results)** — no model numbers are reported or
+> estimated.
 
 ## 1. Problem
 
@@ -122,26 +124,28 @@ Latency: 32 ms p50 / 41 ms p95 model time on a laptop CPU.
 
 | Result | Value |
 |---|---|
-| Plan budget compliance | **Pending: requires OpenAI key** |
-| Plan decision and rental compliance | **Pending: requires OpenAI key** |
-| Suggestions within budget | **Pending: requires OpenAI key** |
-| DIY safety-filter rejections | **Pending: requires OpenAI key** |
-| Latency per AI step | **Pending: requires OpenAI key** |
-| Cost per redesign | **Pending: requires OpenAI key** |
+| Plan budget compliance | **Demo mode (pre-generated results)** |
+| Plan decision and rental compliance | **Demo mode (pre-generated results)** |
+| Suggestions within budget | **Demo mode (pre-generated results)** |
+| DIY safety-filter rejections | **Demo mode (pre-generated results)** |
+| Latency per AI step | **Demo mode (pre-generated results)** |
+| Cost per redesign | **Demo mode (pre-generated results)** |
 
-Method: [EVALUATION.md §2](EVALUATION.md). Verified without a key: every AI action fails with a clear
+Method and demo-mode behaviour: [EVALUATION.md §2](EVALUATION.md). Demo results pass the same
+validators as model output (plan budget and decisions, suggestion budget, DIY safety and rental rules)
+and are marked `source: "demo"`. Verified with fallback off and no key: every AI action fails with a clear
 `AI_CONFIGURATION_ERROR` message and leaves the project usable (EVALUATION.md §3).
 
 ### 6.3 Engineering quality
 
-| Suite | Result (develop, 2026-10-24) |
+| Suite | Result (develop, 2026-10-26) |
 |---|---|
-| Backend JUnit (Postgres 17.11) | 149 passed |
+| Backend JUnit (Postgres 17) | 183 passed |
 | CV pytest | 21 passed |
-| Frontend Vitest | 230 passed |
-| Playwright, stubbed API, chromium + mobile | 39 passed, 4 consecutive runs |
+| Frontend Vitest | 233 passed |
+| Playwright, stubbed API, chromium + mobile | 39 passed |
 | Playwright, fake Spring API through Next | 6 passed |
-| Playwright, **real stack** (no AI key) | full journey, privacy, logout, CV-down fallback passed |
+| Playwright, **real stack**, demo mode | full journey incl. all AI steps, privacy, logout, CV-down fallback passed |
 
 CI runs on every push and PR in all three repositories. Secret scan of all history (including
 unreachable objects): no secrets.
