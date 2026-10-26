@@ -18,7 +18,7 @@ class GeneratedImageConsistencyTest {
         UUID project=UUID.randomUUID();Long id=7L;
         when(persistence.claim(project,id)).thenReturn(true);
         when(storage.upload(anyString(),anyString(),anyLong(),any())).thenAnswer(c->new StoredObject("bucket",c.getArgument(0)));
-        doThrow(new IllegalStateException("database unavailable")).when(persistence).complete(eq(id),any(),anyString(),anyLong(),anyInt(),anyInt());
+        doThrow(new IllegalStateException("database unavailable")).when(persistence).complete(eq(id),any(),anyString(),anyLong(),anyInt(),anyInt(),anyString());
         var service=new GeneratedDesignImageService(storage,persistence,queries,null,10000);
         var out=new ByteArrayOutputStream();ImageIO.write(new BufferedImage(1,1,BufferedImage.TYPE_INT_RGB),"png",out);
         assertThatThrownBy(()->service.store(project,id,"image/png",out.toByteArray())).isInstanceOf(DesignFailureException.class);

@@ -3,6 +3,7 @@ package com.roomify.service.recommendation;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roomify.ai.AiDesignProvider;
+import com.roomify.ai.DemoLibrary;
 import com.roomify.ai.AiProviderConfigurationException;
 import com.roomify.ai.AiProviderQuotaExhaustedException;
 import com.roomify.ai.AiProviderRetryableException;
@@ -14,6 +15,8 @@ import com.roomify.exception.InvalidStateException;
 import com.roomify.exception.RecommendationFailureException;
 import com.roomify.service.DesignQueryService;
 import com.roomify.service.ProjectPreferencesService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -32,6 +35,7 @@ import java.util.UUID;
 public class RecommendationGenerationService {
 
     static final int ATTEMPTS = 2;
+    private static final Logger logger = LoggerFactory.getLogger(RecommendationGenerationService.class);
     private static final List<String> HIGH_RISK_TERMS = List.of("rewire", "wiring", "hardwire", "hard-wire",
             "circuit breaker", "electrical panel", "junction box", "gas line", "gas pipe", "plumbing",
             "load-bearing", "structural", "demolish", "asbestos", "lead paint", "chainsaw");
@@ -47,10 +51,12 @@ public class RecommendationGenerationService {
     private final DesignQueryService designs;
     private final ProjectPreferencesService preferences;
     private final ObjectMapper mapper;
+    private final DemoLibrary demo;
 
     public RecommendationGenerationService(AiDesignProvider provider, AiProperties properties,
             RecommendationPromptFactory prompts, RecommendationContractCodec codec, RecommendationResultService results,
-            DesignQueryService designs, ProjectPreferencesService preferences, ObjectMapper mapper) {
+            DesignQueryService designs, ProjectPreferencesService preferences, ObjectMapper mapper, DemoLibrary demo) {
+        this.demo = demo;
         this.provider = provider;
         this.properties = properties;
         this.prompts = prompts;
@@ -71,6 +77,16 @@ public class RecommendationGenerationService {
         ProjectPreferencesResponse saved = preferences.find(projectId);
         if (saved == null) throw new InvalidStateException("Save style and budget preferences first.");
 
+        if (properties.isDemoMode()) return demoSet(projectId, design, saved, "AI_DEMO_MODE");
+        try {
+            return aiSet(projectId, design, saved);
+        } catch (RuntimeException failed) {
+            if (!properties.isDemoFallback()) throw failed;
+            return demoSet(projectId, design, saved, reason(failed));
+        }
+    }
+
+    private StoredRecommendationSet aiSet(UUID projectId, StoredDesignResponse design, ProjectPreferencesResponse saved) {
         String retryReason = null;
         for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
             String raw = call(prompts.recommendationSystemPrompt(),
@@ -83,6 +99,13 @@ public class RecommendationGenerationService {
             }
         }
         throw new RecommendationFailureException("INVALID_RECOMMENDATIONS");
+    }
+
+    private StoredRecommendationSet demoSet(UUID projectId, StoredDesignResponse design, ProjectPreferencesResponse saved,
+            String reason) {
+        var demoCase = demo.caseFor(saved.roomPurpose());
+        logger.warn("AI demo result used: feature=suggestions case={} reason={}", demoCase.key(), reason);
+        return results.storeSet(projectId, design.designId(), demo.recommendations(saved), demo.metadata(demoCase));
     }
 
     public StoredDIYGuide generateGuide(UUID projectId, UUID itemId) {
@@ -102,17 +125,48 @@ public class RecommendationGenerationService {
         var asPayload = new RecommendationItem(item.name(), item.category(), item.reason(), item.placement(),
                 item.estimatedPrice(), item.cheaperAlternative(), item.searchQuery(), item.diyEligible());
 
+        if (properties.isDemoMode()) return demoGuide(projectId, item, set.currency(), saved, "AI_DEMO_MODE");
+        try {
+            return aiGuide(projectId, item, set.currency(), rental, asPayload);
+        } catch (RuntimeException failed) {
+            if (!properties.isDemoFallback()) throw failed;
+            return demoGuide(projectId, item, set.currency(), saved, reason(failed));
+        }
+    }
+
+    private StoredDIYGuide aiGuide(UUID projectId, StoredRecommendationItem item, String currency, boolean rental,
+            RecommendationItem asPayload) {
         String retryReason = null;
         for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
-            String raw = call(prompts.diySystemPrompt(), prompts.diyUserPrompt(asPayload, set.currency(), rental, retryReason));
+            String raw = call(prompts.diySystemPrompt(), prompts.diyUserPrompt(asPayload, currency, rental, retryReason));
             try {
-                DIYGuide guide = toGuide(raw, set.currency(), item.estimatedPrice(), rental);
-                return results.storeGuide(projectId, itemId, guide, metadata());
+                DIYGuide guide = toGuide(raw, currency, item.estimatedPrice(), rental);
+                return results.storeGuide(projectId, item.itemId(), guide, metadata());
             } catch (IllegalArgumentException invalid) {
                 retryReason = invalid.getMessage();
             }
         }
         throw new RecommendationFailureException("INVALID_DIY_GUIDE");
+    }
+
+    // Checked like model output so the demo guide obeys the same safety and rental rules.
+    private StoredDIYGuide demoGuide(UUID projectId, StoredRecommendationItem item, String currency,
+            ProjectPreferencesResponse saved, String reason) {
+        var demoCase = demo.caseFor(saved == null ? null : saved.roomPurpose());
+        DIYGuide guide = demo.guide(item.name(), currency, item.estimatedPrice());
+        String checked;
+        try {
+            checked = mapper.writeValueAsString(guide);
+        } catch (Exception unwritable) {
+            throw new RecommendationFailureException("INVALID_DIY_GUIDE");
+        }
+        guide = toGuide(checked, currency, item.estimatedPrice(), saved != null && saved.rentalFriendly());
+        logger.warn("AI demo result used: feature=diy case={} reason={}", demoCase.key(), reason);
+        return results.storeGuide(projectId, item.itemId(), guide, demo.metadata(demoCase));
+    }
+
+    private static String reason(RuntimeException failed) {
+        return failed instanceof RecommendationFailureException failure ? failure.code() : failed.getClass().getSimpleName();
     }
 
     private String call(String system, String user) {

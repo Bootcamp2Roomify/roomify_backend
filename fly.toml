@@ -10,6 +10,9 @@ primary_region = "iad"
   PORT = "8080"
   STORAGE_TYPE = "s3"
   VISION_SERVICE_BASE_URL = "http://roomify-cv.internal:8000"
+  # Judging build: every AI feature is served from the bundled demo library (results marked source "demo").
+  # Set to "false" once a funded OpenAI key is in the secrets; failures still fall back (AI_DEMO_FALLBACK).
+  AI_DEMO_MODE = "true"
 
 [http_service]
   internal_port = 8080

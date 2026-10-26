@@ -30,7 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** ROOM-97/99/100: shopping recommendations and DIY guides generated from the saved design. */
-@SpringBootTest
+// These tests cover the error paths, so the demo-library fallback is off.
+@SpringBootTest(properties = "ai.demo-fallback=false")
 @AutoConfigureMockMvc
 class RecommendationGenerationTest {
 

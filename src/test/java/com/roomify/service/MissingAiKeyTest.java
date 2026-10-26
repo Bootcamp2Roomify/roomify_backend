@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Uses the real OpenAI provider beans with no usable key: every AI endpoint must answer with a clear
  * 503 AI_CONFIGURATION_ERROR, leave no half-written result behind and keep the project usable.
  */
-@SpringBootTest(properties = {"ai.api-key=", "OPENAI_API_KEY="})
+@SpringBootTest(properties = {"ai.api-key=", "OPENAI_API_KEY=", "ai.demo-fallback=false"})
 @AutoConfigureMockMvc
 class MissingAiKeyTest {
 

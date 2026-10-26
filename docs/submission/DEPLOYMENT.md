@@ -63,6 +63,11 @@ an OpenAI key.
    fly deploy -a roomify-api
    curl https://roomify-api.fly.dev/api/health
    ```
+   **Demo mode:** `fly.toml` sets `AI_DEMO_MODE=true`, so the plan, visual concept, suggestions and DIY guides come
+   from the bundled demo library (fitted to the user's furniture decisions and budget; the concept is a stock photo
+   for the room type) and every result is marked `source: "demo"`. With `AI_DEMO_MODE=false` the app calls OpenAI and,
+   because `AI_DEMO_FALLBACK` defaults to `true`, still answers from the library if a call fails (401, 429, timeout,
+   invalid output); each fallback is logged as `AI demo result used: feature=… case=… reason=…`.
    Neon requires TLS, so the JDBC URL is set whole with `sslmode=require` (it overrides `DB_HOST`/`DB_PORT`/`DB_NAME`).
    **Long AI calls:** Fly's proxy closes a connection after 60 s with no bytes; an image edit can be silent for
    ~2 minutes, so `fly.toml` sets `http_options.idle_timeout = 600`. A Fly community report says this setting may

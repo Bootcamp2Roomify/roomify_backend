@@ -55,6 +55,13 @@ public class DesignPersistenceService {
         jdbc.update("UPDATE design_requests SET status='SUCCEEDED',completed_at=CURRENT_TIMESTAMP WHERE request_id=?",started.requestId());
         jdbc.update("UPDATE room_projects SET status='DESIGN_READY',updated_at=CURRENT_TIMESTAMP WHERE project_id=?",projectId);
     }
+    /** Records that this attempt was answered from the demo library rather than the configured provider. */
+    @Transactional(propagation=Propagation.REQUIRES_NEW)
+    public void markDemo(Started started,String model) {
+        jdbc.update("UPDATE design_requests SET provider=?,model_name=? WHERE request_id=? AND status='PENDING'",
+            com.roomify.ai.DemoLibrary.PROVIDER,metadata(model),started.requestId());
+        jdbc.update("UPDATE design_results SET model_name=? WHERE design_id=? AND status='PENDING'",metadata(model),started.designId());
+    }
     @Transactional(propagation=Propagation.REQUIRES_NEW)
     public void fail(Started started,String code) {
         // Codes are fixed by the caller; raw exception text is never persisted.
