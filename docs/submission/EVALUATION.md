@@ -34,6 +34,26 @@ detections are wrong, so detection is a *starting list*, not an inventory — wh
 step lets people rename, remove and add items, and why every detection under 60 % confidence is
 labelled "please check". Beds and TVs are reliable; tables are not (0.40 precision).
 
+### Deployed runtime: ONNX Runtime on Vercel (measured 2026-10-26)
+
+The live CV service runs the same YOLO11n weights exported to ONNX on ONNX Runtime (no torch), so it
+fits a Vercel Python Function. Same 60 images, same script and matching rules:
+
+| Runtime | TP | FP | FN | Precision | Recall | Recall, large | Model time p50 / p95 |
+|---|---|---|---|---|---|---|---|
+| torch (table above), laptop | 99 | 42 | 60 | 0.70 | 0.62 | 0.68 | 32 / 41 ms |
+| ONNX Runtime, laptop | 101 | 42 | 58 | 0.71 | 0.64 | 0.70 | 38 / 43 ms |
+| ONNX Runtime, live on Vercel | 101 | 42 | 58 | 0.71 | 0.64 | 0.70 | 237 / 257 ms |
+
+The ONNX path letterboxes to a fixed 640×640 square instead of ultralytics' minimal rectangle, which
+explains the two extra true positives; this is the same detector, not an improvement. On Vercel
+(one vCPU) a photo takes about 0.24 s of model time; the HTTP round trip measured from the test laptop
+in Asia to the US East function was p50 1.4 s, p95 2.0 s, max 3.5 s (cold start included), which
+says more about the network path than about the service. Memory: about 175 MB for the ONNX service
+vs about 510 MB with torch. Raw results:
+[`detection_results_onnx_local.json`](evaluation/data/detection_results_onnx_local.json),
+[`detection_results_vercel.json`](evaluation/data/detection_results_vercel.json).
+
 ### Failure cases
 
 In each figure, green boxes are ground truth and red boxes are predictions with their confidence.
@@ -127,13 +147,14 @@ The UI shows: "AI generation is not configured on this server yet (no valid Open
 furniture and preferences are saved — try again once AI is enabled." (frontend tests cover all four
 actions; the real-stack browser journey shows it for the plan).
 
-## 4. Automated test results (2026-10-26, develop)
+## 4. Automated test results (2026-10-26, develop, release v1.0.1)
 
 | Suite | Result |
 |---|---|
-| Backend (JUnit, Postgres 17) | 183 passed (25 for demo mode) |
-| CV service (pytest) | 21 passed |
-| Frontend unit (Vitest) | 233 passed |
+| Backend (JUnit, Postgres 17) | 186 passed (25 for demo mode) |
+| CV service (pytest) | 22 passed on torch, 22 passed on ONNX Runtime |
+| Frontend unit (Vitest) | 235 passed |
 | Browser, stubbed API (Playwright, chromium + mobile) | 39 passed |
 | Browser, fake Spring API through Next (Playwright) | 6 passed |
 | Browser, real stack, `AI_DEMO_MODE=true` (Playwright `tests/live`, `LIVE_AI=1 LIVE_DEMO=1`) | full journey incl. plan, concept, suggestions, DIY and over-budget warning; privacy; logout; CV-down manual entry: all passed |
+| Browser, **live deployment** <https://roomify-rooms.vercel.app>, demo mode (same suite, `LIVE_BASE_URL`) | journey incl. plan, visual concept (image loaded), suggestions and DIY; privacy; logout: passed. CV-down skipped (needs the CV service stopped). The journey also passed with a 9.7 MB, 6000×4000 photo (shrunk in the browser below Vercel's 4.5 MB body limit). One earlier run timed out at registration (15 s limit) while a new API instance cold-started; it passed on rerun |

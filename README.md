@@ -5,11 +5,12 @@ rental-aware redesign: detected furniture you can keep, replace or remove, an AI
 a visual concept of the same room, shopping suggestions with cheaper alternatives, and beginner
 DIY guides. *Redesign more, buy less.*
 
-> **Release status: v0.9.0-rc1 — AI features unverified.** Accounts, projects, upload, detection,
-> review and preferences are tested end to end against the real stack. Plan, visual concept,
-> suggestion and DIY generation are implemented and tested with fake providers and with no key (clear
-> `503 AI_CONFIGURATION_ERROR`), but have **not yet been run against the live OpenAI API**, including
-> the new default image model `gpt-image-2.5-sunburst`.
+> **Live demo: <https://roomify-rooms.vercel.app>** (release v1.0.1, demo mode). Accounts, projects,
+> upload, detection, review and preferences run for real. The OpenAI account had no usable credit at
+> submission, so the live build answers plan, visual concept, suggestions and DIY from a bundled demo
+> library (`AI_DEMO_MODE=true`), labelled "Demo" in the app and `source: "demo"` in the API. These
+> features have **not been run against the live OpenAI API**. The first request after 5 idle minutes
+> waits for a cold start (about 10–20 s). Hosting: [`docs/submission/DEPLOYMENT.md`](docs/submission/DEPLOYMENT.md).
 
 Related services: [roomify_frontend](https://github.com/Bootcamp2Roomify/roomify_frontend) (Next.js) ·
 [roomify_cv](https://github.com/Bootcamp2Roomify/roomify_cv) (FastAPI + YOLO11).
@@ -40,8 +41,8 @@ Contracts: [`docs/api-contract.md`](docs/api-contract.md), [`docs/design/API.md`
 ## Stack
 
 Java 21 · Spring Boot 3.5.0 (Web, Validation, Data JPA, Security / OAuth2 resource server) ·
-PostgreSQL 17 + Flyway · OpenAI (`gpt-4o-mini` text, `gpt-image-2.5-sunburst` image edits) · AWS S3 or local
-disk for images. Exact versions: [`docs/submission/DEPENDENCIES.md`](docs/submission/DEPENDENCIES.md).
+PostgreSQL 17 + Flyway · OpenAI (`gpt-4o-mini` text, `gpt-image-2.5-sunburst` image edits) · images in
+Postgres (`STORAGE_TYPE=database`, used live), AWS S3 or local disk. Deployed as a Vercel container (`Dockerfile.vercel`). Exact versions: [`docs/submission/DEPENDENCIES.md`](docs/submission/DEPENDENCIES.md).
 
 ## Run locally
 

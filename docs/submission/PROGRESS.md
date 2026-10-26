@@ -184,5 +184,25 @@ Docs in this folder: REPORT.md, EVALUATION.md (detection measured), DEPENDENCIES
   final video cut with the AI scenes recorded in demo mode (`video/Roomify - Demo.mp4`, 3:24).
 - Docs: every "Pending: requires OpenAI key" row now reads "Demo mode (pre-generated results)"; no AI
   latency or cost numbers are reported.
-- Deployment still blocked on Fly.io billing and a bucket-scoped AWS key.
+- Deployment still blocked on Fly.io billing and a bucket-scoped AWS key (resolved in v1.0.1, below).
 
+## 2026-10-26 (night) — live on Vercel, v1.0.1
+
+- Live at <https://roomify-rooms.vercel.app> on free plans, no payment card, `AI_DEMO_MODE=true`:
+  three Vercel projects (frontend; backend as a container; CV as a Python Function) and Neon Postgres.
+- Hosts checked and rejected: Hugging Face Docker Spaces (PRO subscription required, 402 on create),
+  Koyeb (card required), Render Free (512 MB), Fly.io (payment method). Details in DEPLOYMENT.md.
+- Photos stored in Postgres instead of S3 (`STORAGE_TYPE=database`, migration V12; backend#56), so no
+  AWS key is needed.
+- Backend runs on Vercel's Container Runtime (`Dockerfile.vercel`, backend#57); a class-data-sharing
+  archive brings Spring's start on Vercel from 13–18 s to about 8 s (port deadline 28 s).
+- CV service on ONNX Runtime without torch (cv#15): same detections on the 60-image set (precision
+  0.71, recall 0.64 vs 0.70/0.62 on torch), 175 MB instead of 510 MB; bearer token between backend and
+  CV because the CV function is publicly reachable.
+- Frontend shrinks photos over 4 MB in the browser (Vercel's 4.5 MB request limit; frontend#38).
+- Live suite passed against the deployment (journey incl. visual concept, privacy, logout; journey also
+  with a 9.7 MB photo). One run hit a cold start at registration and passed on rerun.
+- Keep-warm workflow pings the services every 5 minutes (best effort).
+- Video finished without voice-over: title card, captions, end card with the live URL; the plan,
+  concept and suggestions scenes re-recorded as stills (no frames caught mid-scroll); recorded against
+  the live deployment, 2:43.

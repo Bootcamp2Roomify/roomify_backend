@@ -24,7 +24,7 @@ Versions not written in the POM come from the Spring Boot 3.5.0 parent BOM, whic
 |---|---|---|
 | spring-boot-starter-web / validation / data-jpa | 3.5.0 | REST API, bean validation, JPA |
 | spring-boot-starter-security / oauth2-resource-server | 3.5.0 (Spring Security 6.5.0) | BCrypt, HS256 JWT issuing and verification |
-| flyway-core / flyway-database-postgresql | 11.7.2 | Schema migrations V1–V10 |
+| flyway-core / flyway-database-postgresql | 11.7.2 | Schema migrations V1–V12 |
 | org.postgresql:postgresql | 42.7.5 | JDBC driver |
 | software.amazon.awssdk s3 / signin | 2.55.5 (`aws.sdk.version`) | Image storage on S3 |
 | *test:* spring-boot-starter-test 3.5.0, spring-security-test 6.5.0, networknt json-schema-validator 1.5.9 | | Unit/integration tests, contract schema checks |

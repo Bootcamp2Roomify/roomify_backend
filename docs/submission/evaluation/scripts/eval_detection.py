@@ -1,5 +1,6 @@
-"""Score the running CV service (/v1/analyze) on the COCO subset. Usage: eval_detection.py subset.json images_dir url out.json"""
-import json, sys, time, statistics, urllib.request, uuid
+"""Score the running CV service (/v1/analyze) on the COCO subset. Usage: eval_detection.py subset.json images_dir url out.json
+Set CV_API_TOKEN to call a deployment that requires a bearer token."""
+import json, os, sys, time, statistics, urllib.request, uuid
 subset, img_dir, url, out_path = sys.argv[1:5]
 items = json.load(open(subset))
 
@@ -7,7 +8,10 @@ def post(path):
     boundary = uuid.uuid4().hex
     body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"img.jpg\"\r\n"
             f"Content-Type: image/jpeg\r\n\r\n").encode() + open(path, "rb").read() + f"\r\n--{boundary}--\r\n".encode()
-    req = urllib.request.Request(url, data=body, headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    if os.environ.get("CV_API_TOKEN"):
+        headers["Authorization"] = f"Bearer {os.environ['CV_API_TOKEN']}"
+    req = urllib.request.Request(url, data=body, headers=headers)
     t = time.perf_counter()
     with urllib.request.urlopen(req, timeout=60) as r:
         data = json.load(r)
