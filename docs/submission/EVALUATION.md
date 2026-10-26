@@ -1,6 +1,6 @@
 # Evaluation Evidence
 
-All numbers here were measured on 2026-10-24 by running the code in this repository; nothing is
+Detection numbers here were measured on 2026-10-24 (tests re-run 2026-10-26) by running the code in this repository; nothing is
 estimated or copied from model cards. Where something has **not been measured yet**, it says so.
 Reproduce with the scripts in [`evaluation/scripts/`](evaluation/scripts/).
 
@@ -58,21 +58,42 @@ evaluation only.
 
 ## 2. Redesign plan, visual concept and suggestions (OpenAI)
 
-**Pending: requires OpenAI key** — no `OPENAI_API_KEY` has been configured, so none of these
-have been measured. No values are estimated or borrowed from model cards.
+**Demo mode (pre-generated results).** No OpenAI measurements exist. On 2026-10-26 the project's
+OpenAI account could not serve requests: one key was rejected (`401 invalid_api_key`) and the other
+had no credit (`429 insufficient_quota`, `credit_balance_exhausted`). The submitted build therefore
+runs with `AI_DEMO_MODE=true`: the plan, visual concept, suggestions and DIY guides come from a
+bundled demo library and every such result is marked `source: "demo"` in the API and "Demo" in the
+UI (see §2.1). None of the values below are estimated or borrowed from model cards; latency and cost
+of demo results say nothing about the model, so they are not reported.
 
 | Result | Value |
 |---|---|
-| Plan budget compliance (first attempt / after corrective retry) | **Pending: requires OpenAI key** |
-| Plan decision compliance (KEEP kept, REMOVE removed) | **Pending: requires OpenAI key** |
-| Rental-mode compliance (no permanent work) | **Pending: requires OpenAI key** |
-| Suggestion sets within budget; cheaper-alternative coverage | **Pending: requires OpenAI key** |
-| DIY guides rejected by the safety filter | **Pending: requires OpenAI key** |
-| Visual-concept quality (architecture preserved, kept items visible) | **Pending: requires OpenAI key** |
-| Latency p50 / p95: plan, concept, suggestions, DIY | **Pending: requires OpenAI key** |
-| Cost per full redesign (tokens × list price on the run date) | **Pending: requires OpenAI key** |
+| Plan budget compliance (first attempt / after corrective retry) | **Demo mode (pre-generated results)** |
+| Plan decision compliance (KEEP kept, REMOVE removed) | **Demo mode (pre-generated results)** |
+| Rental-mode compliance (no permanent work) | **Demo mode (pre-generated results)** |
+| Suggestion sets within budget; cheaper-alternative coverage | **Demo mode (pre-generated results)** |
+| DIY guides rejected by the safety filter | **Demo mode (pre-generated results)** |
+| Visual-concept quality (architecture preserved, kept items visible) | **Demo mode (pre-generated results)** |
+| Latency p50 / p95: plan, concept, suggestions, DIY | **Demo mode (pre-generated results)** |
+| Cost per full redesign (tokens × list price on the run date) | **Demo mode (pre-generated results)** |
 
-The harness is ready:
+### 2.1 What demo mode does (verified by tests)
+
+- Four cases chosen by room purpose: living room (`LIVING`), bedroom (`SLEEP`), home office
+  (`STUDY`), student room (`STUDY_AND_SLEEP`, `MULTIPURPOSE`, default).
+- The demo plan is built from the request — every detected object with its KEEP / REPLACE / REMOVE /
+  UNSURE decision, the budget, currency and rental flag — and must pass the same `DesignPlanValidator`
+  as model output. Suggestions and DIY guides pass the same contract, safety and rental checks.
+- The concept image is a CC0 stock photo for the room type (credits: `src/main/resources/demo/CREDITS.md`),
+  **not** an edit of the user's photo; the UI says so.
+- With a funded key (`AI_DEMO_MODE=false`) the app calls OpenAI; `AI_DEMO_FALLBACK=true` (default)
+  answers from the library when a call fails (401, 429, timeout, invalid output) and logs
+  `AI demo result used: feature=… case=… reason=…`.
+- Tests: `DemoLibraryTest` (every case through the validators, odd and zero budgets, TWD, rental,
+  low-confidence items) and `DemoFallbackTest` (each endpoint in demo mode without calling the provider;
+  quota, rejected-key, timeout, unexpected-error and invalid-output fallback).
+
+The live-AI measurement harness is ready for when a funded key is available:
 
 - the backend logs one content-free line per provider call
   (`AI usage kind=text|image model=… promptTokens=… completionTokens=… reasoningTokens=… latencyMs=…`);
@@ -106,13 +127,13 @@ The UI shows: "AI generation is not configured on this server yet (no valid Open
 furniture and preferences are saved — try again once AI is enabled." (frontend tests cover all four
 actions; the real-stack browser journey shows it for the plan).
 
-## 4. Automated test results (2026-10-24, develop)
+## 4. Automated test results (2026-10-26, develop)
 
 | Suite | Result |
 |---|---|
-| Backend (JUnit, Postgres 17.11) | 149 passed |
+| Backend (JUnit, Postgres 17) | 183 passed (25 for demo mode) |
 | CV service (pytest) | 21 passed |
-| Frontend unit (Vitest) | 230 passed |
-| Browser, stubbed API (Playwright, chromium + mobile) | 39 passed, stable over 4 consecutive runs |
+| Frontend unit (Vitest) | 233 passed |
+| Browser, stubbed API (Playwright, chromium + mobile) | 39 passed |
 | Browser, fake Spring API through Next (Playwright) | 6 passed |
-| Browser, real stack — no AI key (Playwright `tests/live`) | journey, privacy, logout, CV-down manual entry: all passed |
+| Browser, real stack, `AI_DEMO_MODE=true` (Playwright `tests/live`, `LIVE_AI=1 LIVE_DEMO=1`) | full journey incl. plan, concept, suggestions, DIY and over-budget warning; privacy; logout; CV-down manual entry: all passed |

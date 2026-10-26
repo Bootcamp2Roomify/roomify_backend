@@ -1,5 +1,7 @@
 package com.roomify.dto.recommendation;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.roomify.ai.DemoLibrary;
 import java.math.BigDecimal;
 import java.util.UUID;
 import java.util.List;
@@ -14,4 +16,9 @@ public record StoredDIYGuide(UUID guideId, UUID itemId, UUID projectId, String s
         steps = List.copyOf(steps); safetyNotes = List.copyOf(safetyNotes);
     }
 
+    /** "demo" when this came from the bundled demo library instead of a live AI model. */
+    @JsonProperty("source")
+    public String source() {
+        return metadata != null && DemoLibrary.PROVIDER.equals(metadata.provider()) ? DemoLibrary.SOURCE_DEMO : DemoLibrary.SOURCE_AI;
+    }
 }

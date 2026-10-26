@@ -1,0 +1,37 @@
+# Roomify API on Fly.io. Deploy: fly deploy -a roomify-api (see docs/submission/DEPLOYMENT.md).
+# Secrets (DB, JWT, OpenAI, AWS) are set with `fly secrets set`, never in this file.
+app = "roomify-api"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  STORAGE_TYPE = "s3"
+  VISION_SERVICE_BASE_URL = "http://roomify-cv.internal:8000"
+  # Judging build: every AI feature is served from the bundled demo library (results marked source "demo").
+  # Set to "false" once a funded OpenAI key is in the secrets; failures still fall back (AI_DEMO_FALLBACK).
+  AI_DEMO_MODE = "true"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # Image edits can stay silent for ~2 minutes; Fly's default idle timeout is 60 s.
+  [http_service.http_options]
+    idle_timeout = 600
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "90s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

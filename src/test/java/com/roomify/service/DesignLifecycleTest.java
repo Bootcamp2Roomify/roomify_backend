@@ -24,7 +24,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+// These tests cover the error paths, so the demo-library fallback is off.
+@SpringBootTest(properties = "ai.demo-fallback=false")
 @AutoConfigureMockMvc
 class DesignLifecycleTest {
     @Autowired JdbcTemplate jdbc;

@@ -16,7 +16,7 @@ public class DesignQueryService {
     public DesignQueryService(JdbcTemplate jdbc,ObjectMapper mapper) {this.jdbc=jdbc;this.mapper=mapper;}
     private static final String SELECT="""
         SELECT d.*,r.provider,r.request_version,r.prompt_version,
-            a.status AS image_status,a.error_code AS image_error,a.content_type,a.file_size_bytes,a.width,a.height
+            a.status AS image_status,a.error_code AS image_error,a.source AS image_source,a.content_type,a.file_size_bytes,a.width,a.height
         FROM design_results d LEFT JOIN design_requests r ON r.request_id=d.request_id
         LEFT JOIN design_assets a ON a.design_result_id=d.design_id
         """;
@@ -43,7 +43,8 @@ public class DesignQueryService {
         String imageStatus=rs.getString("image_status");
         GeneratedAsset asset=imageStatus==null?null:new GeneratedAsset(imageStatus,rs.getString("image_error"),
             rs.getString("content_type"),(Long)rs.getObject("file_size_bytes"),(Integer)rs.getObject("width"),(Integer)rs.getObject("height"),
-            "SUCCEEDED".equals(imageStatus)?"/api/projects/"+project+"/designs/"+id+"/image/content":null);
+            "SUCCEEDED".equals(imageStatus)?"/api/projects/"+project+"/designs/"+id+"/image/content":null,
+            rs.getString("image_source"));
         return new StoredDesignResponse(id,rs.getObject("request_id",UUID.class),project,rs.getString("status"),
             rs.getString("error_code"),plan,rs.getString("provider"),rs.getString("model_name"),version,
             rs.getString("prompt_version"),instant(rs,"created_at"),instant(rs,"completed_at"),asset);

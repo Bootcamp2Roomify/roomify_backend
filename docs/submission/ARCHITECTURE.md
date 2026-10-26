@@ -67,7 +67,7 @@ deactivated, so design history stays explainable. Money is stored as `NUMERIC(12
 
 ![Proposed Roomify deployment: Vercel for the frontend, Fly.io for the API and a private CV service, Neon Postgres and the existing S3 bucket.](architecture/deployment.png)
 
-This topology is a proposal; nothing has been deployed. Costs, steps and risks are in the Deployment
+This topology is approved and configured but not yet deployed (DEPLOYMENT.md has the blockers). Costs, steps and risks are in the Deployment
 document.
 
 ## Architectural decisions

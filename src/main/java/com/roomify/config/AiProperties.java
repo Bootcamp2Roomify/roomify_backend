@@ -19,6 +19,10 @@ public class AiProperties {
     private Double temperature = 0.1;
     /** Sent only when set, e.g. "low" for reasoning models such as gpt-6-luna. */
     private String reasoningEffort;
+    /** Serve every AI feature from the bundled demo library without calling the provider. */
+    private boolean demoMode = false;
+    /** When a live AI call fails (bad key, no credit, timeout, invalid output), answer from the demo library instead. */
+    private boolean demoFallback = true;
 
     public String getProvider() {
         return provider;
@@ -105,5 +109,21 @@ public class AiProperties {
 
     public void setReasoningEffort(String reasoningEffort) {
         this.reasoningEffort = reasoningEffort == null || reasoningEffort.isBlank() ? null : reasoningEffort;
+    }
+
+    public boolean isDemoMode() {
+        return demoMode;
+    }
+
+    public void setDemoMode(boolean demoMode) {
+        this.demoMode = demoMode;
+    }
+
+    public boolean isDemoFallback() {
+        return demoFallback;
+    }
+
+    public void setDemoFallback(boolean demoFallback) {
+        this.demoFallback = demoFallback;
     }
 }

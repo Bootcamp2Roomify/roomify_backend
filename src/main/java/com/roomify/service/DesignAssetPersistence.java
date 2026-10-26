@@ -26,11 +26,11 @@ public class DesignAssetPersistence {
         return true;
     }
     @Transactional(propagation=Propagation.REQUIRES_NEW)
-    public void complete(Long id,StoredObject object,String type,long size,int width,int height) {
+    public void complete(Long id,StoredObject object,String type,long size,int width,int height,String source) {
         int changed=jdbc.update("""
             UPDATE design_assets SET status='SUCCEEDED',bucket=?,storage_key=?,content_type=?,file_size_bytes=?,
-            width=?,height=?,error_code=NULL,updated_at=CURRENT_TIMESTAMP WHERE design_result_id=? AND status='UPLOADING'
-            """,object.bucket(),object.key(),type,size,width,height,id);
+            width=?,height=?,source=?,error_code=NULL,updated_at=CURRENT_TIMESTAMP WHERE design_result_id=? AND status='UPLOADING'
+            """,object.bucket(),object.key(),type,size,width,height,source,id);
         if(changed!=1) throw new InvalidStateException("Image upload is no longer pending.");
     }
     @Transactional(propagation=Propagation.REQUIRES_NEW)

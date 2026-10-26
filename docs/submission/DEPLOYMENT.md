@@ -1,7 +1,8 @@
 # Deployment
 
-**Status: proposal only.** No cloud resources have been created. Every step below needs the project
-owner's approval and their own credentials.
+**Status (2026-10-26): approved, configs committed, Neon database created, not yet deployed.** Blocked on
+(1) a payment method on the Fly.io account (`fly apps create` answers "We need your payment information")
+and (2) a bucket-scoped AWS key. The judging build runs with `AI_DEMO_MODE=true` (see step 3).
 
 ## Recommendation: Vercel + Fly.io + Neon + existing S3
 
@@ -29,7 +30,7 @@ Why this shape:
 | Database | Neon Free (0.5 GB storage, scales to zero after 5 min idle) | $0 |
 | Images | Existing AWS S3 bucket (Standard ≈ $0.023/GB-month) | < $0.10 |
 | **Infrastructure total** | | **≈ $13.40 / month** |
-| OpenAI usage | per redesign: plan + concept + suggestions + DIY | **Pending: requires OpenAI key** (EVALUATION.md §2) |
+| OpenAI usage | per redesign: plan + concept + suggestions + DIY | **Demo mode (pre-generated results)** — $0 while `AI_DEMO_MODE=true` (EVALUATION.md §2) |
 
 Notes: Fly bills per second, so stopping the machines after judging stops the cost. Fly raised its
 RAM price on 2026-10-01 (1 GB machine $5.70 → $6.70); Frankfurt is $7.73. Neon's first query after
@@ -42,33 +43,41 @@ Prerequisites the owner provides: Fly.io account (`fly auth login`), Vercel acco
 GitHub org, Neon account, the existing S3 bucket name/region and an IAM key **scoped to that bucket**,
 an OpenAI key.
 
-1. **Database** — Neon console → *New project* `roomify` (region AWS us-east-1) → copy host, database,
-   user, password.
-2. **CV service** (private):
+1. **Database** — `neonctl projects create --name roomify --region-id aws-us-east-1`, then
+   `neonctl connection-string --project-id <id>` for host, database, user and password.
+2. **CV service** (private) — `roomify_cv/fly.toml` is committed: no public service, `CV_HOST="::"`
+   because Fly's private network (`roomify-cv.internal`) is IPv6-only and the image default `0.0.0.0` is IPv4.
    ```bash
    cd roomify_cv
-   fly launch --name roomify-cv --region iad --no-deploy --internal-port 8000
-   # remove the [http_service] section from fly.toml so it has no public port
-   fly scale vm shared-cpu-1x --memory 1024 -a roomify-cv
+   fly apps create roomify-cv
    fly deploy -a roomify-cv
+   fly ips list -a roomify-cv   # must be empty: no public address
    ```
-3. **Backend**:
+3. **Backend** — `roomify_backend/fly.toml` is committed (1 GB, always on, `/api/health` check,
+   `VISION_SERVICE_BASE_URL=http://roomify-cv.internal:8000`, `STORAGE_TYPE=s3`).
    ```bash
    cd roomify_backend
-   fly launch --name roomify-api --region iad --no-deploy --internal-port 8080
+   fly apps create roomify-api
    fly secrets set -a roomify-api \
-     DB_HOST=<neon-host> DB_PORT=5432 DB_NAME=<db> DB_USERNAME=<user> DB_PASSWORD=<password> \
+     SPRING_DATASOURCE_URL='jdbc:postgresql://<neon-host>/<db>?sslmode=require' DB_USERNAME=<user> DB_PASSWORD=<password> \
      JWT_SECRET=$(openssl rand -hex 32) OPENAI_API_KEY=<key> \
-     STORAGE_TYPE=s3 S3_BUCKET=<bucket> AWS_REGION=<region> AWS_ACCESS_KEY_ID=<id> AWS_SECRET_ACCESS_KEY=<secret> \
-     CV_SERVICE_URL=http://roomify-cv.internal:8000
-   fly scale vm shared-cpu-1x --memory 1024 -a roomify-api
+     S3_BUCKET=<bucket> AWS_REGION=<region> AWS_ACCESS_KEY_ID=<id> AWS_SECRET_ACCESS_KEY=<secret>
    fly deploy -a roomify-api
    curl https://roomify-api.fly.dev/api/health
    ```
-   Neon requires TLS; if the JDBC URL needs it explicitly, add `?sslmode=require` via a
-   `SPRING_DATASOURCE_URL` secret.
+   **Demo mode:** `fly.toml` sets `AI_DEMO_MODE=true`, so the plan, visual concept, suggestions and DIY guides come
+   from the bundled demo library (fitted to the user's furniture decisions and budget; the concept is a stock photo
+   for the room type) and every result is marked `source: "demo"`. With `AI_DEMO_MODE=false` the app calls OpenAI and,
+   because `AI_DEMO_FALLBACK` defaults to `true`, still answers from the library if a call fails (401, 429, timeout,
+   invalid output); each fallback is logged as `AI demo result used: feature=… case=… reason=…`.
+   Neon requires TLS, so the JDBC URL is set whole with `sslmode=require` (it overrides `DB_HOST`/`DB_PORT`/`DB_NAME`).
+   **Long AI calls:** Fly's proxy closes a connection after 60 s with no bytes; an image edit can be silent for
+   ~2 minutes, so `fly.toml` sets `http_options.idle_timeout = 600`. A Fly community report says this setting may
+   not take effect: the smoke test (step 5) must include a visual concept. If it is cut off, the fix is to make the
+   concept endpoint asynchronous (202 + poll).
 4. **Frontend** — Vercel → *Add New Project* → import `Bootcamp2Roomify/roomify_frontend` → framework
-   Next.js → environment variable `ROOMIFY_API_URL=https://roomify-api.fly.dev` → *Deploy*.
+   Next.js → environment variable `ROOMIFY_API_URL=https://roomify-api.fly.dev` → *Deploy*. The project API bridge
+   sets `maxDuration = 300` so AI calls are not cut at Vercel's non-Fluid 10 s default.
 5. **Smoke test** — run the live browser suite against the deployment:
    `LIVE_BASE_URL=https://<project>.vercel.app LIVE_AI=1 npx playwright test -c playwright.live.config.ts`.
 6. **After judging** — `fly scale count 0 -a roomify-api -a roomify-cv` (stops billing), or `fly apps destroy`.
