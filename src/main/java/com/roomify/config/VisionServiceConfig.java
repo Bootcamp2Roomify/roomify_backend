@@ -3,7 +3,9 @@ package com.roomify.config;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.net.http.HttpClient;
@@ -24,9 +26,12 @@ public class VisionServiceConfig {
                 new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(properties.getReadTimeout());
 
-        return RestClient.builder()
+        RestClient.Builder builder = RestClient.builder()
                 .baseUrl(properties.getBaseUrl())
-                .requestFactory(requestFactory)
-                .build();
+                .requestFactory(requestFactory);
+        if (StringUtils.hasText(properties.getApiToken())) {
+            builder.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiToken());
+        }
+        return builder.build();
     }
 }

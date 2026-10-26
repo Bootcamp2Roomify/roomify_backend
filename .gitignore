@@ -73,3 +73,6 @@ hs_err_pid*
 replay_pid*
 
 /storage/
+# Vercel CLI link
+.vercel
+.env*
